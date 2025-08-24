@@ -38,6 +38,10 @@ public class UnsafeChestShopSign {
         return lines[ChestShopSign.PRICE_LINE];
     }
 
+    public static String getItem(String[] lines) {
+        return lines[ChestShopSign.ITEM_LINE];
+    }
+
     public static boolean isValidPreparedSign(String[] lines) {
         String playername = ChestShopSign.getOwner(lines);
         if (!ChestShopSign.isAdminShop(playername) && !playername.isEmpty()) {
