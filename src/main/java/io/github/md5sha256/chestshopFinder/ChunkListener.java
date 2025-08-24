@@ -1,16 +1,20 @@
 package io.github.md5sha256.chestshopFinder;
 
 import com.Acrobot.ChestShop.Signs.ChestShopSign;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Server;
 import org.bukkit.Tag;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Sign;
+import org.bukkit.block.sign.Side;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkLoadEvent;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -31,16 +35,27 @@ public class ChunkListener implements Listener {
         this.database = database;
     }
 
+    private String[] getSignLines(@Nonnull Sign sign) {
+        PlainTextComponentSerializer serializer = PlainTextComponentSerializer.plainText();
+        List<Component> components = sign.getSide(Side.FRONT).lines();
+        String[] lines = new String[components.size()];
+        for (int i = 0; i < components.size(); i++) {
+            lines[i] = serializer.serialize(components.get(i));
+        }
+        return lines;
+    }
+
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     public void onChunkLoad(ChunkLoadEvent event) {
         UUID world = event.getWorld().getUID();
         var tileEntities = event.getChunk()
                 .getTileEntities(b -> Tag.SIGNS.isTagged(b.getType()), false);
+
         for (BlockState state : tileEntities) {
             if (!(state instanceof Sign sign)) {
                 return;
             }
-            String[] lines = sign.getLines();
+            String[] lines = getSignLines(sign);
             if (!ChestShopSign.isValid(lines)) {
                 return;
             }
