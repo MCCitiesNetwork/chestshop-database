@@ -41,7 +41,8 @@ public class SqliteDatabaseInterface implements DatabaseInterface {
                 owner_name TEXT,
                 buy_price REAL,
                 sell_price REAL,
-                quantity INTEGER NOT NULL
+                quantity INTEGER NOT NULL,
+                last_updated DATETIME DEFAULT (unixepoch()),
                 CHECK (buy_price IS NOT NULL OR sell_price IS NOT NULL),
                 CHECK (
                         (buy_price IS NULL AND buy_quantity IS NULL) OR
@@ -80,6 +81,15 @@ public class SqliteDatabaseInterface implements DatabaseInterface {
             END;
             """;
 
+    private static final String CREATE_SHOP_UPDATE_LAST_UPDATED_ITEM_TRIGGER = """
+            CREATE TRIGGER trigger_shop_update_timestamp
+            BEFORE UPDATE ON Shop
+            FOR EACH ROW
+            BEGIN
+                SELECT NEW.last_updated = unixepoch();
+            END;
+            """;
+
     private static final String SELECT_ITEM_ID_AND_CODES_COUNT = "SELECT COUNT(*) FROM Items";
 
     private static final String SELECT_ITEM_ID_AND_CODES = """
@@ -113,6 +123,7 @@ public class SqliteDatabaseInterface implements DatabaseInterface {
                 buy_price,
                 sell_price,
                 quantity,
+                last_updated
             FROM Shop
             WHERE
                 item_id = ?
@@ -319,7 +330,8 @@ public class SqliteDatabaseInterface implements DatabaseInterface {
                     Double buyPrice = resultSet.getObject(5, Double.class);
                     Double sellPrice = resultSet.getObject(6, Double.class);
                     int quantity = resultSet.getInt(7);
-                    Shop shop = new Shop(world, posX, posY, posZ, itemId, ownerName, buyPrice, sellPrice, quantity);
+                    long lastUpdated = resultSet.getLong(8);
+                    Shop shop = new Shop(world, posX, posY, posZ, itemId, ownerName, buyPrice, sellPrice, quantity, lastUpdated);
                     return Optional.of(shop);
                 }
             }
