@@ -1,6 +1,7 @@
 plugins {
     java
     id("xyz.jpenilla.run-paper") version "2.3.1"
+    id("com.gradleup.shadow") version "9.2.2"
 }
 
 group = "io.github.md5sha256"
@@ -38,6 +39,11 @@ tasks {
         filesMatching("paper-plugin.yml") {
             expand("version" to project.version)
         }
+    }
+    shadowJar {
+        val base = "io.github.md5sha256.chestshopdatabase.libraries"
+        relocate("org.mariadb", "${base}.org.mariadb")
+        relocate("org.mybatis", "${base}.org.mybatis")
     }
     runServer {
         // Configure the Minecraft version for our task.
