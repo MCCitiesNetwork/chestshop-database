@@ -6,19 +6,19 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
-public record Shop(
+public record HydratedShop(
         @Nonnull UUID worldId,
         int posX,
         int posY,
         int posZ,
-        @Nonnull String itemCode,
+        @Nonnull ChestshopItem item,
         @Nonnull String ownerName,
         @Nullable Double buyPrice,
         @Nullable Double sellPrice,
         int quantity
 ) {
 
-    public Shop {
+    public HydratedShop {
         if (buyPrice == null && sellPrice == null) {
             throw new IllegalArgumentException("Shop cannot have both buyPrice and sellPrice be null!");
         }

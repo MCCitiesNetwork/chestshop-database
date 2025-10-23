@@ -1,6 +1,7 @@
-package io.github.md5sha256.chestshopFinder;
+package io.github.md5sha256.chestshopFinder.listener;
 
 import com.Acrobot.ChestShop.Signs.ChestShopSign;
+import io.github.md5sha256.chestshopFinder.ItemDiscoverer;
 import io.github.md5sha256.chestshopFinder.database.ChestShopDatabase;
 import io.github.md5sha256.chestshopFinder.util.BlockPosition;
 import net.kyori.adventure.text.Component;
