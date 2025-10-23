@@ -21,6 +21,7 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.8-R0.1-SNAPSHOT")
     compileOnly("com.acrobot.chestshop:chestshop:3.12.2")
+    implementation("org.mybatis:mybatis:3.5.19")
 }
 
 

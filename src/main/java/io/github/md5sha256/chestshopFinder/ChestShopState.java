@@ -7,9 +7,8 @@ import io.github.md5sha256.chestshopFinder.model.HydratedShop;
 import io.github.md5sha256.chestshopFinder.util.BlockPosition;
 
 import javax.annotation.Nonnull;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,12 +34,14 @@ public class ChestShopState {
 
     @Nonnull
     public CompletableFuture<Void> flush(
-            @Nonnull Connection connection,
             @Nonnull DatabaseInterface database,
             @Nonnull ExecutorService executor
     ) {
         List<HydratedShop> created = List.copyOf(this.createdShops.values());
         List<HydratedShop> updated = List.copyOf(this.updatedShops.values());
+        List<HydratedShop> toInsert = new ArrayList<>(created.size() + updated.size());
+        toInsert.addAll(created);
+        toInsert.addAll(updated);
         List<BlockPosition> deleted = List.copyOf(this.deletedShops);
         this.createdShops.clear();
         this.updatedShops.clear();
@@ -48,16 +49,10 @@ public class ChestShopState {
         CompletableFuture<Void> future = new CompletableFuture<>();
         executor.submit(() -> {
             try {
-                if (!deleted.isEmpty()) {
-                    database.deleteShops(connection, deleted);
-                }
-                if (!updated.isEmpty()) {
-                    database.updateShops(connection, updated);
-                }
-                if (!created.isEmpty()) {
-                    database.registerShops(connection, created);
-                }
-            } catch (SQLException ex) {
+                deleted.forEach(database::deleteShopByPos);
+                database.insertShops(toInsert);
+                database.flushSession();
+            } catch (Exception ex) {
                 future.completeExceptionally(ex);
             }
         });
