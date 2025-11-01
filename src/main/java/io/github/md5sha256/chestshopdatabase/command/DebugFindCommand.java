@@ -15,6 +15,8 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -40,7 +42,7 @@ public record DebugFindCommand(@Nonnull ChestShopState shopState,
                             CompletableFuture.supplyAsync(() -> {
                                         try (DatabaseSession session = databaseSupplier.get()) {
                                             return session.mapper().selectShopsByShopTypeWorldItem(
-                                                    ShopType.BOTH,
+                                                    EnumSet.allOf(ShopType.class),
                                                     world,
                                                     itemCode);
                                         } catch (Exception ex) {

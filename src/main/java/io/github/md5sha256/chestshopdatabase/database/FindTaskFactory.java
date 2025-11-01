@@ -20,7 +20,11 @@ public record FindTaskFactory(@Nonnull Supplier<DatabaseSession> sessionSupplier
         FindState copy = new FindState(findState);
         return CompletableFuture.supplyAsync(() -> {
                     try (DatabaseSession session = sessionSupplier.get()) {
-                        return session.mapper().selectShopsByItem(copy.item().itemCode());
+                        return session.mapper().selectShopsByShopTypeWorldItem(
+                                copy.shopTypes(),
+                                copy.world().orElse(null),
+                                copy.item().itemCode()
+                        );
                     }
                 }, executorState.dbExec())
                 .thenApply(results -> copy.applyToStream(results.stream()).toList())

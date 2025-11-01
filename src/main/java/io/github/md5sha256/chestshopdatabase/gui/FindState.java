@@ -17,7 +17,9 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 public class FindState {
@@ -29,6 +31,7 @@ public class FindState {
             ShopAttribute.class);
     private final Map<ShopAttribute, Comparator<Shop>> comparators = new EnumMap<>(ShopAttribute.class);
     private final ChestshopItem item;
+    private UUID world = null;
 
     public FindState(
             @Nonnull ChestshopItem item,
@@ -47,6 +50,10 @@ public class FindState {
         this.comparators.putAll(other.comparators);
     }
 
+    public boolean showAllShopTypes() {
+        return this.shopTypes.size() == NUM_SHOP_TYPES;
+    }
+
     public ChestshopItem item() {
         return this.item;
     }
@@ -63,6 +70,16 @@ public class FindState {
             this.attributeMeta.put(attribute,
                     new ShopAttributeMeta(attribute, SortDirection.ASCENDING, 0));
         }
+        this.world = null;
+    }
+
+    public void setWorld(@Nonnull UUID world) {
+        this.world = world;
+    }
+
+    @Nonnull
+    public Optional<UUID> world() {
+        return Optional.ofNullable(this.world);
     }
 
     public void addShopAttributeMeta(@Nonnull ShopAttribute attribute) {

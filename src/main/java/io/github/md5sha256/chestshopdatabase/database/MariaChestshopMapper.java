@@ -12,6 +12,7 @@ import org.apache.ibatis.annotations.SelectProvider;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Mapper
@@ -97,49 +98,11 @@ public interface MariaChestshopMapper extends DatabaseMapper {
             @Param("z") int z);
 
     @Override
-    @Select("""
-            SELECT
-                CAST(world_uuid AS BINARY(16)) AS worldID,
-                pos_x AS posX,
-                pos_y AS posY,
-                pos_z AS posZ,
-                item_code AS itemCode,
-                owner_name AS ownerName,
-                buy_price AS buyPrice,
-                sell_price AS sellPrice,
-                quantity,
-                stock,
-                estimated_capacity AS estimatedCapacity
-            FROM Shop
-            WHERE item_code = #{item_code};
-            """)
-    @Nonnull
-    List<Shop> selectShopsByItem(@Param("item_code") @Nonnull String itemCode);
-
-
-    @Override
-    @SelectProvider(type = MariaDatabaseUtil.class, method = "selectShopsByShopTypeItem")
-    @Nonnull
-    List<Shop> selectShopsByShopTypeItem(@Nonnull ShopType shopType,
-                                         @Param("item_code") @Nonnull String itemCode);
-
-    @Override
     @SelectProvider(type = MariaDatabaseUtil.class, method = "selectShopsByShopTypeWorldItem")
     @Nonnull
-    List<Shop> selectShopsByShopTypeWorldItem(@Nonnull ShopType shopType,
-                                              @Param("world_uuid") @Nonnull UUID world,
-                                              @Param("item_code") @Nonnull String itemCode);
+    List<Shop> selectShopsByShopTypeWorldItem(@Nonnull Set<ShopType> shopTypes,
+                                              @Param("world_uuid") @Nullable UUID world,
+                                              @Param("item_code") @Nullable String itemCode);
 
-    @Override
-    @SelectProvider(type = MariaDatabaseUtil.class, method = "selectShopsByShopTypeWorldItemDistance")
-    @Nonnull
-    List<Shop> selectShopsByShopTypeWorldItemDistance(
-            @Nonnull ShopType shopType,
-            @Param("world_uuid") @Nonnull UUID world,
-            @Param("item_code") @Nonnull String itemCode,
-            @Param("x") int x,
-            @Param("y") int y,
-            @Param("z") int z,
-            @Param("distance") double distance
-    );
+
 }

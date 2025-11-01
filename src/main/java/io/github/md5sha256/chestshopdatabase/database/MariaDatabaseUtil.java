@@ -5,13 +5,20 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.jdbc.SQL;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Set;
 import java.util.UUID;
 
 public class MariaDatabaseUtil {
 
+    private static final int NUM_SHOP_TYPES = ShopType.values().length;
+
     @Nonnull
-    public String selectShopsByShopTypeItem(@Nonnull ShopType shopType,
-                                    @Param("item_code") @Nonnull String itemCode) {
+    public String selectShopsByShopTypeItem(@Nonnull Set<ShopType> shopTypes,
+                                            @Param("item_code") @Nullable String itemCode) {
+        boolean notAllTypes = shopTypes.size() != NUM_SHOP_TYPES;
+        boolean filterBuy = shopTypes.contains(ShopType.BUY) || shopTypes.contains(ShopType.BOTH);
+        boolean filterSell = shopTypes.contains(ShopType.SELL) || shopTypes.contains(ShopType.BOTH);
         return new SQL()
                 .SELECT("""
                         CAST(world_uuid AS BINARY(16)) as worldID,
@@ -27,17 +34,19 @@ public class MariaDatabaseUtil {
                         estimated_capacity AS estimatedCapacity
                         """)
                 .FROM("Shop")
-                .WHERE("item_code = #{item_code}")
-                .applyIf(shopType == ShopType.BUY,
-                        sql -> sql.WHERE("buy_price IS NOT NULL", "stock > 0"))
-                .applyIf(shopType == ShopType.SELL, sql -> sql.WHERE("sell_price IS NOT NULL"))
+                .applyIf(itemCode != null, sql -> sql.WHERE("item_code = #{item_code}"))
+                .applyIf(notAllTypes && filterBuy, sql -> sql.WHERE("buy_price IS NOT NULL", "stock > 0"))
+                .applyIf(notAllTypes && filterSell, sql -> sql.WHERE("sell_price IS NOT NULL", "estimated_capacity > 0"))
                 .toString();
     }
 
     @Nonnull
-    public String selectShopsByShopTypeWorldItem(@Nonnull ShopType shopType,
-                                            @Param("world_uuid") @Nonnull UUID world,
-                                            @Param("item_code") @Nonnull String itemCode) {
+    public String selectShopsByShopTypeWorldItem(@Nonnull Set<ShopType> shopTypes,
+                                                 @Param("world_uuid") @Nullable UUID world,
+                                                 @Param("item_code") @Nullable String itemCode) {
+        boolean notAllTypes = shopTypes.size() != NUM_SHOP_TYPES;
+        boolean filterBuy = shopTypes.contains(ShopType.BUY) || shopTypes.contains(ShopType.BOTH);
+        boolean filterSell = shopTypes.contains(ShopType.SELL) || shopTypes.contains(ShopType.BOTH);
         return new SQL()
                 .SELECT("""
                         CAST(world_uuid AS BINARY(16)) AS worldID,
@@ -53,10 +62,12 @@ public class MariaDatabaseUtil {
                         estimated_capacity AS estimatedCapacity
                         """)
                 .FROM("Shop")
-                .WHERE("item_code = #{item_code}",
-                        "world_uuid = #{world_uuid, javaType=java.util.UUID, jdbcType=OTHER}")
-                .applyIf(shopType == ShopType.BUY, sql -> sql.WHERE("buy_price IS NOT NULL"))
-                .applyIf(shopType == ShopType.SELL, sql -> sql.WHERE("sell_price IS NOT NULL"))
+                .applyIf(itemCode != null, sql -> sql.WHERE("item_code = #{item_code}"))
+                .applyIf(world != null,
+                        sql -> sql.WHERE(
+                                "world_uuid = #{world_uuid, javaType=java.util.UUID, jdbcType=OTHER}"))
+                .applyIf(notAllTypes && filterBuy, sql -> sql.WHERE("buy_price IS NOT NULL", "stock > 0"))
+                .applyIf(notAllTypes && filterSell, sql -> sql.WHERE("sell_price IS NOT NULL", "estimated_capacity > 0"))
                 .toString();
     }
 

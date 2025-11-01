@@ -59,6 +59,7 @@ public record FindCommand(@Nonnull ChestShopState shopState,
                     new ChestshopItem(item, itemCode),
                     new ShopComparators().withDistance(position).build()
             );
+            findState.setWorld(position.world());
             Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui);
             player.showDialog(dialog);
         });

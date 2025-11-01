@@ -12,6 +12,7 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public interface DatabaseMapper {
@@ -93,26 +94,9 @@ public interface DatabaseMapper {
     }
 
     @Nonnull
-    List<Shop> selectShopsByItem(@Nonnull String itemCode);
-
-    @Nonnull
-    List<Shop> selectShopsByShopTypeItem(@Nonnull ShopType shopType, @Nonnull String itemCode);
-
-    @Nonnull
-    List<Shop> selectShopsByShopTypeWorldItem(@Nonnull ShopType shopType,
-                                              @Nonnull UUID world,
-                                              @Nonnull String itemCode);
-
-    @Nonnull
-    List<Shop> selectShopsByShopTypeWorldItemDistance(
-            @Nonnull ShopType shopType,
-            @Nonnull UUID world,
-            @Nonnull String itemCode,
-            int x,
-            int y,
-            int z,
-            double maxDistanceSquared
-    );
+    List<Shop> selectShopsByShopTypeWorldItem(@Nonnull Set<ShopType> shopTypes,
+                                              @Nullable UUID world,
+                                              @Nullable String itemCode);
 
     @Flush
     void flushSession();
