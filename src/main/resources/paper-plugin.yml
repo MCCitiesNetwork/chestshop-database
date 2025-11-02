@@ -9,6 +9,15 @@ dependencies:
       join-classpath: true
       load: BEFORE
       required: true
+    WorldEdit:
+      join-classpath: true
+      required: false
+    FastAsyncWorldEdit:
+      join-classpath: true
+      required: false
+    AsyncWorldEdit:
+      join-classpath: true
+      required: false
 
 permissions:
   csdb.find:

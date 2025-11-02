@@ -2,6 +2,7 @@ package io.github.md5sha256.chestshopdatabase.database;
 
 import io.github.md5sha256.chestshopdatabase.model.Shop;
 import io.github.md5sha256.chestshopdatabase.model.ShopType;
+import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -104,5 +105,16 @@ public interface MariaChestshopMapper extends DatabaseMapper {
                                               @Param("world_uuid") @Nullable UUID world,
                                               @Param("item_code") @Nullable String itemCode);
 
-
+    @Override
+    @Select("""
+            SELECT
+                CAST(world_uuid AS BINARY(16)) as world
+                pos_x AS posX,
+                pos_y AS posY,
+                pos_z AS posZ
+            WHERE
+                world_uuid = CAST(#{world_uuid} AS UUID)
+            """)
+    @Nonnull
+    List<BlockPosition> selectShopsPositionsByWorld(@Nonnull @Param("world_uuid") UUID world);
 }

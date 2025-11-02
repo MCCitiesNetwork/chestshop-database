@@ -9,6 +9,7 @@ import io.github.md5sha256.chestshopdatabase.database.MariaChestshopMapper;
 import io.github.md5sha256.chestshopdatabase.database.MariaDatabase;
 import io.github.md5sha256.chestshopdatabase.gui.ShopResultsGUI;
 import io.github.md5sha256.chestshopdatabase.listener.ChestShopListener;
+import io.github.md5sha256.chestshopdatabase.listener.WorldEditHandler;
 import io.github.md5sha256.chestshopdatabase.settings.Settings;
 import io.github.md5sha256.chestshopdatabase.util.UnsafeChestShopSign;
 import io.papermc.paper.command.brigadier.Commands;
@@ -40,7 +41,7 @@ import java.util.logging.Logger;
 
 public final class ChestshopDatabasePlugin extends JavaPlugin {
 
-    private final ExecutorService databaseExecutor = Executors.newSingleThreadExecutor();
+    private final ExecutorService databaseExecutor = Executors.newVirtualThreadPerTaskExecutor();
     private ChestShopState shopState;
     private ItemDiscoverer discoverer;
     private Settings settings;
@@ -75,6 +76,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         cacheItemCodes(sessionFactory);
         registerCommands(sessionFactory);
         scheduleTasks(sessionFactory);
+        new WorldEditHandler(this, this.shopState);
     }
 
     @Override

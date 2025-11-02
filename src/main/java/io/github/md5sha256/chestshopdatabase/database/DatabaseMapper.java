@@ -98,6 +98,9 @@ public interface DatabaseMapper {
                                               @Nullable UUID world,
                                               @Nullable String itemCode);
 
+    @Nonnull
+    List<BlockPosition> selectShopsPositionsByWorld(@Nonnull UUID world);
+
     @Flush
     void flushSession();
 }
