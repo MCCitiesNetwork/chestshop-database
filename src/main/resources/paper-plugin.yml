@@ -9,3 +9,8 @@ dependencies:
       join-classpath: true
       load: BEFORE
       required: true
+
+permissions:
+  csdb.find:
+    description: "Permission to run /csdb find"
+    default: op

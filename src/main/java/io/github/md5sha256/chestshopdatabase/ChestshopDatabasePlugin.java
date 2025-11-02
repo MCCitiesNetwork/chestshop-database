@@ -1,8 +1,6 @@
 package io.github.md5sha256.chestshopdatabase;
 
 import io.github.md5sha256.chestshopdatabase.command.CommandBean;
-import io.github.md5sha256.chestshopdatabase.command.DebugDialogCommand;
-import io.github.md5sha256.chestshopdatabase.command.DebugFindCommand;
 import io.github.md5sha256.chestshopdatabase.command.FindCommand;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseMapper;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseSession;
@@ -96,11 +94,6 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                 MariaChestshopMapper.class);
         FindTaskFactory taskFactory = new FindTaskFactory(sessionSupplier, executorState);
         List<CommandBean> commands = List.of(
-                new DebugDialogCommand(taskFactory, gui),
-                new DebugFindCommand(this.shopState,
-                        sessionSupplier,
-                        this.databaseExecutor,
-                        executorState.mainThreadExec()),
                 new FindCommand(this.shopState,
                         this.discoverer,
                         taskFactory,

@@ -30,7 +30,7 @@ public record FindCommand(@Nonnull ChestShopState shopState,
     @Override
     public @NotNull LiteralArgumentBuilder<CommandSourceStack> command() {
         return Commands.literal("find")
-                .requires(sourceStack -> sourceStack.getSender() instanceof Player)
+                .requires(sourceStack -> sourceStack.getSender() instanceof Player player && player.hasPermission("csdb.find"))
                 .then(Commands.argument("itemCode", new ItemCodesArgumentType(shopState))
                         .executes(ctx -> {
                             if (!(ctx.getSource().getSender() instanceof Player player)) {
