@@ -61,7 +61,7 @@ public record ChestShopListener(
                 buyPriceDecimal);
         Double sellPrice = sellPriceDecimal.equals(PriceUtil.NO_PRICE) ? null : toDouble(
                 sellPriceDecimal);
-        this.discoverer.discoverItemCode(itemCode, itemStack -> {
+        this.discoverer.discoverItemStackFromCode(itemCode, itemStack -> {
             if (itemStack == null || itemStack.isEmpty()) {
                 // FIXME log warning
                 return;

@@ -74,7 +74,7 @@ public class ChunkListener implements Listener {
             }
             container.getInventory().getContents();
             String itemCode = ChestShopSign.getItem(lines);
-            this.discoverer.discoverItemCode(itemCode,
+            this.discoverer.discoverItemStackFromCode(itemCode,
                     item -> this.database.registerShop(position, item, itemCode, lines, container));
         }
     }

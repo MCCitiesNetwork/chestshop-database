@@ -18,39 +18,84 @@ import io.papermc.paper.dialog.Dialog;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 public record FindCommand(@Nonnull ChestShopState shopState,
                           @Nonnull ItemDiscoverer discoverer,
                           @Nonnull FindTaskFactory taskFactory,
                           @Nonnull ShopResultsGUI gui) implements CommandBean.Single {
 
+
     @Override
     public @NotNull LiteralArgumentBuilder<CommandSourceStack> command() {
+        return baseFindCommand();
+    }
+
+    private LiteralArgumentBuilder<CommandSourceStack> baseFindCommand() {
         return Commands.literal("find")
-                .requires(sourceStack -> sourceStack.getSender() instanceof Player player && player.hasPermission("csdb.find"))
-                .then(Commands.argument("itemCode", new ItemCodesArgumentType(shopState))
+                .requires(sourceStack -> sourceStack.getSender() instanceof Player player && player.hasPermission(
+                        "csdb.find"))
+                .executes(ctx -> {
+                    if (!(ctx.getSource().getSender() instanceof Player player)) {
+                        return Command.SINGLE_SUCCESS;
+                    }
+                    ItemStack inMainHand = player.getInventory().getItemInMainHand();
+                    if (inMainHand.isEmpty()) {
+                        player.sendMessage(Component.text(
+                                "You must hold an item in your hand or specify an item code!",
+                                NamedTextColor.RED));
+                        return Command.SINGLE_SUCCESS;
+                    }
+                    processCommandWithItem(player, inMainHand);
+                    return Command.SINGLE_SUCCESS;
+                }).then(Commands.argument("itemCode", new ItemCodesArgumentType(shopState))
                         .executes(ctx -> {
                             if (!(ctx.getSource().getSender() instanceof Player player)) {
                                 return Command.SINGLE_SUCCESS;
                             }
                             String itemCode = ctx.getArgument("itemCode", String.class);
-                            processCommand(player, itemCode);
+                            processCommandWithItemCode(player, itemCode);
                             return Command.SINGLE_SUCCESS;
                         })
                 );
     }
 
-    private void processCommand(@Nonnull Player player, @Nonnull String itemCode) {
+    private void processCommandWithItem(@Nonnull Player player, @Nonnull ItemStack itemStack) {
         var loc = player.getLocation();
         BlockPosition position = new BlockPosition(player.getWorld().getUID(),
                 loc.blockX(),
                 loc.blockY(),
                 loc.blockX()
         );
-        this.discoverer.discoverItemCode(itemCode, item -> {
+        this.discoverer.discoverCodeFromItemStack(itemStack, code -> {
+            if (code == null || code.isEmpty()) {
+                player.sendMessage(Component.text("Unknown item: ", NamedTextColor.RED)
+                        .append(itemStack.effectiveName()));
+                return;
+            }
+            FindState findState = new FindState(
+                    new ChestshopItem(itemStack, code),
+                    new ShopComparators().withDistance(position).build()
+            );
+            findState.setWorld(position.world());
+            Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui);
+            player.showDialog(dialog);
+        });
+    }
+
+
+    private void processCommandWithItemCode(@Nonnull Player player, @Nonnull String itemCode) {
+        var loc = player.getLocation();
+        BlockPosition position = new BlockPosition(player.getWorld().getUID(),
+                loc.blockX(),
+                loc.blockY(),
+                loc.blockX()
+        );
+        this.discoverer.discoverItemStackFromCode(itemCode, item -> {
             if (item == null || item.isEmpty()) {
                 player.sendMessage(Component.text("Unknown item: " + itemCode, NamedTextColor.RED));
                 return;

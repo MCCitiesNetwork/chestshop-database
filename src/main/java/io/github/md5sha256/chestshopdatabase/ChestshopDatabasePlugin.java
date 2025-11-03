@@ -1,5 +1,6 @@
 package io.github.md5sha256.chestshopdatabase;
 
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.md5sha256.chestshopdatabase.command.CommandBean;
 import io.github.md5sha256.chestshopdatabase.command.FindCommand;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseMapper;
@@ -119,7 +120,9 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                             .flatMap(List::stream)
                             .map(literal -> csdb.then(literal).build())
                             .forEach(event.registrar()::register);
-                    event.registrar().register(findCommand.command().build());
+                    findCommand.commands().stream()
+                            .map(LiteralArgumentBuilder::build)
+                            .forEach(event.registrar()::register);
                 }
         );
     }
