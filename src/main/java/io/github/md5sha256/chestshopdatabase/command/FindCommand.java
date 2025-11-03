@@ -81,6 +81,10 @@ public record FindCommand(@Nonnull ChestShopState shopState,
                         priceToString(shop.buyPrice()),
                         priceToString(shop.sellPrice())), NamedTextColor.AQUA))
                 .appendNewline()
+                .append(Component.text(String.format("Unit Buy Price: %s, Unit Sell Price: %s",
+                        priceToString(shop.unitBuyPrice()),
+                        priceToString(shop.unitSellPrice())), NamedTextColor.AQUA))
+                .appendNewline()
                 .append(Component.text(String.format("Quantity: %d", shop.quantity()),
                         NamedTextColor.LIGHT_PURPLE))
                 .appendNewline()

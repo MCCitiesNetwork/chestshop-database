@@ -39,4 +39,14 @@ public record Shop(
         }
         return ShopType.BUY;
     }
+
+    public Double unitBuyPrice() {
+        if (buyPrice() == null) return null;
+        return buyPrice() / quantity();
+    }
+
+    public Double unitSellPrice () {
+        if (sellPrice() == null) return null;
+        return sellPrice() / quantity();
+    }
 }

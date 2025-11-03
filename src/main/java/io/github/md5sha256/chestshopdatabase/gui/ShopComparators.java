@@ -24,6 +24,10 @@ public class ShopComparators {
                 Comparator.comparing(Shop::buyPrice, ShopComparators::comparingDouble));
         DEFAULTS.put(ShopAttribute.SELL_PRICE,
                 Comparator.comparing(Shop::sellPrice, ShopComparators::comparingDouble));
+        DEFAULTS.put(ShopAttribute.UNIT_BUY_PRICE,
+                Comparator.comparing(Shop::unitBuyPrice, ShopComparators::comparingDouble));
+        DEFAULTS.put(ShopAttribute.UNIT_SELL_PRICE,
+                Comparator.comparing(Shop::unitSellPrice, ShopComparators::comparingDouble));
     }
 
     private static int comparingDouble(@Nullable Double d1, @Nullable Double d2) {

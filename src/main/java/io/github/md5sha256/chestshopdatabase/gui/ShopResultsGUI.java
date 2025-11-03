@@ -25,14 +25,18 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.text.NumberFormat;
+import java.util.Locale;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 public record ShopResultsGUI(@Nonnull Plugin plugin, @Nonnull Settings settings) {
 
+    private static final NumberFormat PRICE_FORMAT = NumberFormat.getCurrencyInstance(Locale.ENGLISH);
+
     private static String priceToString(Double price) {
-        return price == null ? "N/A" : price.toString();
+        return price == null ? "N/A" : PRICE_FORMAT.format(price);
     }
 
     private static String capacityToString(int cap) {
@@ -61,6 +65,9 @@ public record ShopResultsGUI(@Nonnull Plugin plugin, @Nonnull Settings settings)
                 Component.text(String.format("Buy Price: %s, Sell Price: %s",
                         priceToString(shop.buyPrice()),
                         priceToString(shop.sellPrice())), NamedTextColor.AQUA),
+                Component.text(String.format("Unit Buy Price: %s, Unit Sell Price: %s",
+                        priceToString(shop.unitBuyPrice()),
+                        priceToString(shop.unitSellPrice())), NamedTextColor.AQUA),
                 Component.text(String.format("Quantity: %d", shop.quantity()),
                         NamedTextColor.LIGHT_PURPLE),
                 Component.text(String.format("Stock: %d", shop.stock()),
