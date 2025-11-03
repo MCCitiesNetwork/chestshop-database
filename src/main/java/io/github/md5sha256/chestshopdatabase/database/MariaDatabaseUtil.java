@@ -12,9 +12,10 @@ import java.util.UUID;
 
 public class MariaDatabaseUtil {
 
-    private static final int NUM_SHOP_TYPES = ShopType.values().length;
-
     private static String getShopConditions(@Nonnull Set<ShopType> shopTypes) {
+        if (shopTypes.isEmpty()) {
+            return "FALSE";
+        }
         boolean buyOnly = shopTypes.contains(ShopType.BUY);
         boolean sellOnly = shopTypes.contains(ShopType.SELL);
         boolean bothOnly = shopTypes.contains(ShopType.BOTH);
@@ -37,7 +38,6 @@ public class MariaDatabaseUtil {
     public String selectShopsByShopTypeWorldItem(@Nonnull Set<ShopType> shopTypes,
                                                  @Param("world_uuid") @Nullable UUID world,
                                                  @Param("item_code") @Nullable String itemCode) {
-        boolean notAllTypes = shopTypes.size() != NUM_SHOP_TYPES;
         return new SQL()
                 .SELECT("""
                         CAST(world_uuid AS BINARY(16)) AS worldID,
@@ -57,7 +57,7 @@ public class MariaDatabaseUtil {
                 .applyIf(world != null,
                         sql -> sql.WHERE(
                                 "world_uuid = #{world_uuid, javaType=java.util.UUID, jdbcType=OTHER}"))
-                .applyIf(notAllTypes, sql -> sql.WHERE(getShopConditions(shopTypes)))
+                .WHERE(getShopConditions(shopTypes))
                 .toString();
     }
 

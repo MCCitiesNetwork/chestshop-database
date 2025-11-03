@@ -5,6 +5,7 @@ import io.github.md5sha256.chestshopdatabase.gui.FindState;
 import io.github.md5sha256.chestshopdatabase.model.Shop;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -17,6 +18,9 @@ public record FindTaskFactory(@Nonnull Supplier<DatabaseSession> sessionSupplier
     public CompletableFuture<List<Shop>> findTask(
             @Nonnull FindState findState
     ) {
+        if (findState.shopTypes().isEmpty()) {
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
         FindState copy = new FindState(findState);
         return CompletableFuture.supplyAsync(() -> {
                     try (DatabaseSession session = sessionSupplier.get()) {
