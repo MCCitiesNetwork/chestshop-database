@@ -1,5 +1,6 @@
 package io.github.md5sha256.chestshopdatabase.database;
 
+import io.github.md5sha256.chestshopdatabase.database.util.ConditionBuilder;
 import io.github.md5sha256.chestshopdatabase.model.ShopType;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.jdbc.SQL;
@@ -13,30 +14,22 @@ public class MariaDatabaseUtil {
 
     private static final int NUM_SHOP_TYPES = ShopType.values().length;
 
-    @Nonnull
-    public String selectShopsByShopTypeItem(@Nonnull Set<ShopType> shopTypes,
-                                            @Param("item_code") @Nullable String itemCode) {
-        boolean notAllTypes = shopTypes.size() != NUM_SHOP_TYPES;
-        boolean filterBuy = shopTypes.contains(ShopType.BUY) || shopTypes.contains(ShopType.BOTH);
-        boolean filterSell = shopTypes.contains(ShopType.SELL) || shopTypes.contains(ShopType.BOTH);
-        return new SQL()
-                .SELECT("""
-                        CAST(world_uuid AS BINARY(16)) as worldID,
-                        pos_x AS posX,
-                        pos_y AS posY,
-                        pos_z AS posZ,
-                        item_code AS itemCode,
-                        owner_name AS ownerName,
-                        buy_price AS buyPrice,
-                        sell_price AS sellPrice,
-                        quantity,
-                        stock,
-                        estimated_capacity AS estimatedCapacity
-                        """)
-                .FROM("Shop")
-                .applyIf(itemCode != null, sql -> sql.WHERE("item_code = #{item_code}"))
-                .applyIf(notAllTypes && filterBuy, sql -> sql.WHERE("buy_price IS NOT NULL", "stock > 0"))
-                .applyIf(notAllTypes && filterSell, sql -> sql.WHERE("sell_price IS NOT NULL", "estimated_capacity > 0"))
+    private static String getShopConditions(@Nonnull Set<ShopType> shopTypes) {
+        boolean buyOnly = shopTypes.contains(ShopType.BUY);
+        boolean sellOnly = shopTypes.contains(ShopType.SELL);
+        boolean bothOnly = shopTypes.contains(ShopType.BOTH);
+        return new ConditionBuilder()
+                .applyIf(buyOnly,
+                        cond -> cond.or(cond.newAnd("buy_price IS NOT NULL",
+                                "sell_price IS NULL",
+                                "stock > 0")))
+                .applyIf(sellOnly,
+                        cond -> cond.or(cond.newAnd("sell_price IS NOT NULL",
+                                "buy_price IS NULL",
+                                "estimated_capacity > 0")))
+                .applyIf(bothOnly,
+                        cond -> cond.or(cond.newAnd("buy_price IS NOT NULL",
+                                "sell_price IS NOT NULL")))
                 .toString();
     }
 
@@ -45,8 +38,6 @@ public class MariaDatabaseUtil {
                                                  @Param("world_uuid") @Nullable UUID world,
                                                  @Param("item_code") @Nullable String itemCode) {
         boolean notAllTypes = shopTypes.size() != NUM_SHOP_TYPES;
-        boolean filterBuy = shopTypes.contains(ShopType.BUY) || shopTypes.contains(ShopType.BOTH);
-        boolean filterSell = shopTypes.contains(ShopType.SELL) || shopTypes.contains(ShopType.BOTH);
         return new SQL()
                 .SELECT("""
                         CAST(world_uuid AS BINARY(16)) AS worldID,
@@ -66,8 +57,7 @@ public class MariaDatabaseUtil {
                 .applyIf(world != null,
                         sql -> sql.WHERE(
                                 "world_uuid = #{world_uuid, javaType=java.util.UUID, jdbcType=OTHER}"))
-                .applyIf(notAllTypes && filterBuy, sql -> sql.WHERE("buy_price IS NOT NULL", "stock > 0"))
-                .applyIf(notAllTypes && filterSell, sql -> sql.WHERE("sell_price IS NOT NULL", "estimated_capacity > 0"))
+                .applyIf(notAllTypes, sql -> sql.WHERE(getShopConditions(shopTypes)))
                 .toString();
     }
 
