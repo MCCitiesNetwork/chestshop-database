@@ -25,15 +25,15 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Locale;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 public record ShopResultsGUI(@Nonnull Plugin plugin, @Nonnull Settings settings) {
 
-    private static final NumberFormat PRICE_FORMAT = NumberFormat.getCurrencyInstance(Locale.ENGLISH);
+    private static final NumberFormat PRICE_FORMAT = new DecimalFormat("$#.##");
 
     private static String priceToString(Double price) {
         return price == null ? "N/A" : PRICE_FORMAT.format(price);
