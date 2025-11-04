@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.Optional;
 
 public record FindCommand(@Nonnull ChestShopState shopState,
                           @Nonnull ItemDiscoverer discoverer,
@@ -66,10 +67,10 @@ public record FindCommand(@Nonnull ChestShopState shopState,
 
     private void processCommandWithItem(@Nonnull Player player, @Nonnull ItemStack itemStack) {
         var loc = player.getLocation();
-        BlockPosition position = new BlockPosition(player.getWorld().getUID(),
+        BlockPosition queryPosition = new BlockPosition(player.getWorld().getUID(),
                 loc.blockX(),
                 loc.blockY(),
-                loc.blockX()
+                loc.blockZ()
         );
         this.discoverer.discoverCodeFromItemStack(itemStack, code -> {
             if (code == null || code.isEmpty()) {
@@ -79,9 +80,10 @@ public record FindCommand(@Nonnull ChestShopState shopState,
             }
             FindState findState = new FindState(
                     new ChestshopItem(itemStack, code),
-                    new ShopComparators().withDistance(position).build()
+                    new ShopComparators().withDistance(queryPosition).build()
             );
-            findState.setWorld(position.world());
+            findState.setWorld(queryPosition.world());
+            findState.setQueryPosition(queryPosition);
             Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui);
             player.showDialog(dialog);
         });
@@ -90,10 +92,10 @@ public record FindCommand(@Nonnull ChestShopState shopState,
 
     private void processCommandWithItemCode(@Nonnull Player player, @Nonnull String itemCode) {
         var loc = player.getLocation();
-        BlockPosition position = new BlockPosition(player.getWorld().getUID(),
+        BlockPosition queryPosition = new BlockPosition(player.getWorld().getUID(),
                 loc.blockX(),
                 loc.blockY(),
-                loc.blockX()
+                loc.blockZ()
         );
         this.discoverer.discoverItemStackFromCode(itemCode, item -> {
             if (item == null || item.isEmpty()) {
@@ -102,9 +104,10 @@ public record FindCommand(@Nonnull ChestShopState shopState,
             }
             FindState findState = new FindState(
                     new ChestshopItem(item, itemCode),
-                    new ShopComparators().withDistance(position).build()
+                    new ShopComparators().withDistance(queryPosition).build()
             );
-            findState.setWorld(position.world());
+            findState.setWorld(queryPosition.world());
+            findState.setQueryPosition(queryPosition);
             Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui);
             player.showDialog(dialog);
         });
@@ -118,7 +121,14 @@ public record FindCommand(@Nonnull ChestShopState shopState,
         return cap == -1 ? "infinity" : String.valueOf(cap);
     }
 
-    private Component formatShop(@Nonnull Shop shop) {
+    private static String distanceString(Shop shop, Optional<BlockPosition> queryPosition) {
+        if (queryPosition.isEmpty()) return "∞";
+        long squaredDistance = shop.blockPosition().distanceSquared(queryPosition.get());
+        if (squaredDistance == Integer.MAX_VALUE) return "∞";
+        return String.format("%d", (long) Math.floor(Math.sqrt(squaredDistance)));
+    }
+
+    private Component formatShop(@Nonnull Shop shop, @Nonnull Optional<BlockPosition> queryPosition) {
         return Component.text()
                 .append(Component.text("Owner: " + shop.ownerName() + ",", NamedTextColor.GREEN))
                 .appendNewline()
@@ -138,6 +148,9 @@ public record FindCommand(@Nonnull ChestShopState shopState,
                 .appendNewline()
                 .append(Component.text(String.format("Remaining Capacity: %s",
                         capacityToString(shop.estimatedCapacity())), NamedTextColor.YELLOW))
+                .appendNewline()
+                .append(Component.text(String.format("Distance: %s",
+                        distanceString(shop, queryPosition)), NamedTextColor.YELLOW))
                 .appendNewline()
                 .append(Component.text(String.format("Location: %d, %d, %d",
                         shop.posX(),

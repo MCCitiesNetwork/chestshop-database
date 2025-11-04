@@ -82,7 +82,7 @@ public class FindDialog {
                     return;
                 }
                 Component title = Component.text("Shop results for " + findState.item().itemCode());
-                ChestGui chestGui = resultsGUI.createGui(title, res, findState.item().itemStack());
+                ChestGui chestGui = resultsGUI.createGui(title, res, findState.item().itemStack(), findState.queryPosition());
                 chestGui.show(player);
             });
         }, ClickCallback.Options.builder().uses(1).build());

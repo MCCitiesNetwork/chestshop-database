@@ -4,6 +4,7 @@ import io.github.md5sha256.chestshopdatabase.model.ChestshopItem;
 import io.github.md5sha256.chestshopdatabase.model.Shop;
 import io.github.md5sha256.chestshopdatabase.model.ShopAttribute;
 import io.github.md5sha256.chestshopdatabase.model.ShopType;
+import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
 import io.github.md5sha256.chestshopdatabase.util.SortDirection;
 
 import javax.annotation.Nonnull;
@@ -31,6 +32,7 @@ public class FindState {
     private final Map<ShopAttribute, Comparator<Shop>> comparators = new EnumMap<>(ShopAttribute.class);
     private final ChestshopItem item;
     private UUID world = null;
+    private BlockPosition queryPosition = null;
 
     public FindState(
             @Nonnull ChestshopItem item,
@@ -70,15 +72,22 @@ public class FindState {
                     new ShopAttributeMeta(attribute, SortDirection.ASCENDING, 0));
         }
         this.world = null;
+        this.queryPosition = null;
     }
 
     public void setWorld(@Nonnull UUID world) {
         this.world = world;
     }
+    public void setQueryPosition(@Nonnull BlockPosition position) {
+        this.queryPosition = position;
+    }
 
     @Nonnull
     public Optional<UUID> world() {
         return Optional.ofNullable(this.world);
+    }
+    public Optional<BlockPosition> queryPosition() {
+        return Optional.ofNullable(this.queryPosition);
     }
 
     public ShopAttributeMeta getOrCreate(@Nonnull ShopAttribute attribute) {
