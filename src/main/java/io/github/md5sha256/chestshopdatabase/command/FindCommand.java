@@ -10,7 +10,6 @@ import io.github.md5sha256.chestshopdatabase.gui.ShopComparators;
 import io.github.md5sha256.chestshopdatabase.gui.ShopResultsGUI;
 import io.github.md5sha256.chestshopdatabase.gui.dialog.FindDialog;
 import io.github.md5sha256.chestshopdatabase.model.ChestshopItem;
-import io.github.md5sha256.chestshopdatabase.model.Shop;
 import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -22,8 +21,6 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Optional;
 
 public record FindCommand(@Nonnull ChestShopState shopState,
                           @Nonnull ItemDiscoverer discoverer,
@@ -116,52 +113,5 @@ public record FindCommand(@Nonnull ChestShopState shopState,
             Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui);
             player.showDialog(dialog);
         });
-    }
-
-    private String priceToString(Double price) {
-        return price == null ? "N/A" : price.toString();
-    }
-
-    private String capacityToString(int cap) {
-        return cap == -1 ? "infinity" : String.valueOf(cap);
-    }
-
-    private static String distanceString(Shop shop, @Nullable BlockPosition queryPosition) {
-        if (Optional.ofNullable(queryPosition).isEmpty()) return "∞";
-        long squaredDistance = shop.blockPosition().distanceSquared(queryPosition);
-        if (squaredDistance == Integer.MAX_VALUE) return "∞";
-        return String.format("%d", (long) Math.floor(Math.sqrt(squaredDistance)));
-    }
-
-    private Component formatShop(@Nonnull Shop shop, @Nullable BlockPosition queryPosition) {
-        return Component.text()
-                .append(Component.text("Owner: " + shop.ownerName() + ",", NamedTextColor.GREEN))
-                .appendNewline()
-                .append(Component.text(String.format("Buy Price: %s, Sell Price: %s",
-                        priceToString(shop.buyPrice()),
-                        priceToString(shop.sellPrice())), NamedTextColor.AQUA))
-                .appendNewline()
-                .append(Component.text(String.format("Unit Buy Price: %s, Unit Sell Price: %s",
-                        priceToString(shop.unitBuyPrice()),
-                        priceToString(shop.unitSellPrice())), NamedTextColor.AQUA))
-                .appendNewline()
-                .append(Component.text(String.format("Quantity: %d", shop.quantity()),
-                        NamedTextColor.LIGHT_PURPLE))
-                .appendNewline()
-                .append(Component.text(String.format("Stock: %d", shop.stock()),
-                        NamedTextColor.YELLOW))
-                .appendNewline()
-                .append(Component.text(String.format("Remaining Capacity: %s",
-                        capacityToString(shop.estimatedCapacity())), NamedTextColor.YELLOW))
-                .appendNewline()
-                .append(Component.text(String.format("Distance: %s",
-                        distanceString(shop, queryPosition)), NamedTextColor.YELLOW))
-                .appendNewline()
-                .append(Component.text(String.format("Location: %d, %d, %d",
-                        shop.posX(),
-                        shop.posY(),
-                        shop.posZ()), NamedTextColor.RED))
-                .appendNewline()
-                .build();
     }
 }
