@@ -82,13 +82,11 @@ public class FindState {
         this.queryPosition = position;
     }
 
-    @Nonnull
+
     public Optional<UUID> world() {
         return Optional.ofNullable(this.world);
     }
-    public Optional<BlockPosition> queryPosition() {
-        return Optional.ofNullable(this.queryPosition);
-    }
+    public @Nullable BlockPosition queryPosition() { return this.queryPosition; }
 
     public ShopAttributeMeta getOrCreate(@Nonnull ShopAttribute attribute) {
         return this.attributeMeta.computeIfAbsent(attribute, ShopAttributeMeta::new);

@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-@SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public record ShopResultsGUI(@Nonnull Plugin plugin, @Nonnull Settings settings) {
 
     private static final NumberFormat PRICE_FORMAT = new DecimalFormat("$#.##");
@@ -45,9 +44,9 @@ public record ShopResultsGUI(@Nonnull Plugin plugin, @Nonnull Settings settings)
         return cap == -1 ? "infinity" : String.valueOf(cap);
     }
 
-    private static String distanceString(Shop shop, Optional<BlockPosition> queryPosition) {
-        if (queryPosition.isEmpty()) return "∞";
-        long squaredDistance = shop.blockPosition().distanceSquared(queryPosition.get());
+    private static String distanceString(Shop shop, @Nullable BlockPosition queryPosition) {
+        if (Optional.ofNullable(queryPosition).isEmpty()) return "∞";
+        long squaredDistance = shop.blockPosition().distanceSquared(queryPosition);
         if (squaredDistance == Integer.MAX_VALUE) return "∞";
         return String.format("%d", (long) Math.floor(Math.sqrt(squaredDistance)));
     }
@@ -70,7 +69,7 @@ public record ShopResultsGUI(@Nonnull Plugin plugin, @Nonnull Settings settings)
     }
 
     private List<Component> shopLore(@Nonnull Shop shop,
-                                     @Nonnull Optional<BlockPosition> queryPosition) {
+                                     @Nullable BlockPosition queryPosition) {
         return Stream.of(
                 Component.text(String.format("Buy Price: %s, Sell Price: %s",
                         priceToString(shop.buyPrice()),
@@ -94,7 +93,7 @@ public record ShopResultsGUI(@Nonnull Plugin plugin, @Nonnull Settings settings)
     }
 
     private ItemStack shopToIcon(@Nonnull Shop shop,
-                                 @Nonnull Optional<BlockPosition> queryPosition) {
+                                 @Nullable BlockPosition queryPosition) {
         Material material = switch (shop.shopType()) {
             case BOTH -> Material.ENDER_CHEST;
             case BUY -> Material.HOPPER_MINECART;
@@ -115,7 +114,7 @@ public record ShopResultsGUI(@Nonnull Plugin plugin, @Nonnull Settings settings)
     public ChestGui createGui(@Nonnull Component title,
                               @Nonnull List<Shop> shops,
                               @Nonnull ItemStack shopItem,
-                              @Nonnull Optional<BlockPosition> queryPosition) {
+                              @Nullable BlockPosition queryPosition) {
         return createGui(title, shops, shopItem, queryPosition, null);
     }
 
@@ -128,7 +127,7 @@ public record ShopResultsGUI(@Nonnull Plugin plugin, @Nonnull Settings settings)
     }
 
     private GuiItem shopToGuiItem(@Nonnull Shop shop,
-                                  @Nonnull Optional<BlockPosition> queryPosition) {
+                                  @Nullable BlockPosition queryPosition) {
         String clickCommand = settings().clickCommand();
         if (clickCommand == null || clickCommand.isEmpty()) {
             return new GuiItem(shopToIcon(shop, queryPosition), this.plugin);
@@ -149,7 +148,7 @@ public record ShopResultsGUI(@Nonnull Plugin plugin, @Nonnull Settings settings)
     public ChestGui createGui(@Nonnull Component title,
                               @Nonnull List<Shop> shops,
                               @Nonnull ItemStack shopItem,
-                              @Nonnull Optional<BlockPosition> queryPosition,
+                              @Nullable BlockPosition queryPosition,
                               @Nullable Gui parent) {
         ChestGui gui = new ChestGui(6, ComponentHolder.of(title), this.plugin);
         List<GuiItem> items = new ArrayList<>();

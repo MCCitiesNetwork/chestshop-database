@@ -22,7 +22,7 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
-import java.util.List;
+import javax.annotation.Nullable;
 import java.util.Optional;
 
 public record FindCommand(@Nonnull ChestShopState shopState,
@@ -121,14 +121,14 @@ public record FindCommand(@Nonnull ChestShopState shopState,
         return cap == -1 ? "infinity" : String.valueOf(cap);
     }
 
-    private static String distanceString(Shop shop, Optional<BlockPosition> queryPosition) {
-        if (queryPosition.isEmpty()) return "∞";
-        long squaredDistance = shop.blockPosition().distanceSquared(queryPosition.get());
+    private static String distanceString(Shop shop, @Nullable BlockPosition queryPosition) {
+        if (Optional.ofNullable(queryPosition).isEmpty()) return "∞";
+        long squaredDistance = shop.blockPosition().distanceSquared(queryPosition);
         if (squaredDistance == Integer.MAX_VALUE) return "∞";
         return String.format("%d", (long) Math.floor(Math.sqrt(squaredDistance)));
     }
 
-    private Component formatShop(@Nonnull Shop shop, @Nonnull Optional<BlockPosition> queryPosition) {
+    private Component formatShop(@Nonnull Shop shop, @Nullable BlockPosition queryPosition) {
         return Component.text()
                 .append(Component.text("Owner: " + shop.ownerName() + ",", NamedTextColor.GREEN))
                 .appendNewline()
