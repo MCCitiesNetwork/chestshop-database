@@ -22,12 +22,10 @@ public class MariaDatabaseUtil {
         return new ConditionBuilder()
                 .applyIf(buyOnly,
                         cond -> cond.or(cond.newAnd("buy_price IS NOT NULL",
-                                "sell_price IS NULL",
-                                "stock > 0")))
+                                "sell_price IS NULL")))
                 .applyIf(sellOnly,
                         cond -> cond.or(cond.newAnd("sell_price IS NOT NULL",
-                                "buy_price IS NULL",
-                                "estimated_capacity > 0")))
+                                "buy_price IS NULL")))
                 .applyIf(bothOnly,
                         cond -> cond.or(cond.newAnd("buy_price IS NOT NULL",
                                 "sell_price IS NOT NULL")))
