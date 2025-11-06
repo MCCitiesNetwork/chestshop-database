@@ -41,7 +41,7 @@ public record FindCommand(@Nonnull ChestShopState shopState,
                     if (!(ctx.getSource().getSender() instanceof Player player)) {
                         return Command.SINGLE_SUCCESS;
                     }
-                    ItemStack inMainHand = player.getInventory().getItemInMainHand();
+                    ItemStack inMainHand = player.getInventory().getItemInMainHand().asOne();
                     if (inMainHand.isEmpty()) {
                         player.sendMessage(Component.text(
                                 "You must hold an item in your hand or specify an item code!",

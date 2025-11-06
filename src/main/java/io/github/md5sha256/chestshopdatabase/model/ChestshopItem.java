@@ -6,5 +6,16 @@ import javax.annotation.Nonnull;
 
 public record ChestshopItem(
         @Nonnull ItemStack itemStack,
-        @Nonnull String itemCode) {
+        @Nonnull String itemCode
+) {
+
+    public ChestshopItem(@Nonnull ChestshopItem other) {
+        this(other.itemStack.clone(), other.itemCode());
+    }
+
+    @Nonnull
+    public ItemStack itemStack() {
+        return this.itemStack.clone();
+    }
+
 }

@@ -43,7 +43,7 @@ public class FindState {
     }
 
     public FindState(@Nonnull FindState other) {
-        this.item = other.item;
+        this.item = new ChestshopItem(other.item);
         this.world = other.world;
         this.queryPosition = other.queryPosition;
         this.shopTypes.addAll(other.shopTypes);
