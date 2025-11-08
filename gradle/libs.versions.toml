@@ -4,6 +4,7 @@ minecraft = "1.21.8-R0.1-SNAPSHOT"
 
 # Minecraft Plugins
 worldedit = "7.3.16"
+worldguard = "7.0.14"
 fawe = "2.14.0"
 
 [libraries]
@@ -13,3 +14,4 @@ paper = { group = "io.papermc.paper", name = "paper-api", version.ref = "minecra
 # Minecraft Plugins
 worldeditCore = { group = "com.sk89q.worldedit", name = "worldedit-core", version.ref = "worldedit" }
 fastasyncworldeditCore = { group = "com.fastasyncworldedit", name = "FastAsyncWorldEdit-Core", version.ref = "fawe" }
+worldguardBukkit = { group = "com.sk89q.worldguard", name = "worldguard-bukkit", version.ref = "worldguard" }

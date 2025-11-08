@@ -3,6 +3,7 @@ package io.github.md5sha256.chestshopdatabase;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.md5sha256.chestshopdatabase.adapters.fawe.FAWEHandler;
 import io.github.md5sha256.chestshopdatabase.adapters.worldedit.WorldEditHandler;
+import io.github.md5sha256.chestshopdatabase.adapters.worldguard.WorldGuardHandler;
 import io.github.md5sha256.chestshopdatabase.command.CommandBean;
 import io.github.md5sha256.chestshopdatabase.command.FindCommand;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseMapper;
@@ -129,6 +130,9 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         }
         if (pluginManager.isPluginEnabled("FastAsyncWorldEdit")) {
             new FAWEHandler(this, this.shopState);
+        }
+        if (pluginManager.isPluginEnabled("WorldGuard")) {
+            new WorldGuardHandler(this, this.replacements);
         }
     }
 

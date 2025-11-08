@@ -29,6 +29,9 @@ dependencies {
     implementation(projects.adapters.fawe) {
         isTransitive = false
     }
+    implementation(projects.adapters.worldguard) {
+        isTransitive = false
+    }
 
     // Libraries
     implementation("org.mybatis:mybatis:3.5.19")

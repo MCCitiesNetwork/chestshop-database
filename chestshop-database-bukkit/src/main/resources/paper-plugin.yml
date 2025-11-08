@@ -12,6 +12,9 @@ dependencies:
     WorldEdit:
       join-classpath: true
       required: false
+    WorldGuard:
+      join-classpath: true
+      required: false
     FastAsyncWorldEdit:
       join-classpath: true
       required: false
