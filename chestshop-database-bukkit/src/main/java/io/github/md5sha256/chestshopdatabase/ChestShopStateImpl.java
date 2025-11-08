@@ -4,6 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseMapper;
 import io.github.md5sha256.chestshopdatabase.model.HydratedShop;
+import io.github.md5sha256.chestshopdatabase.model.ShopStockUpdate;
 import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -25,7 +26,7 @@ public class ChestShopStateImpl implements ChestShopState {
     private final Cache<BlockPosition, Boolean> shopCache;
 
     private final Map<BlockPosition, HydratedShop> createdShops = new HashMap<>();
-    private final Map<BlockPosition, HydratedShop> updatedShops = new HashMap<>();
+    private final Set<ShopStockUpdate> updatedShops = new HashSet<>();
     private final Set<BlockPosition> deletedShops = new HashSet<>();
     private final Set<String> knownItemCodes = new HashSet<>();
 
@@ -52,10 +53,9 @@ public class ChestShopStateImpl implements ChestShopState {
 
     public @Nullable Consumer<DatabaseMapper> flushTask() {
         List<HydratedShop> created = List.copyOf(this.createdShops.values());
-        List<HydratedShop> updated = List.copyOf(this.updatedShops.values());
-        List<HydratedShop> toInsert = new ArrayList<>(created.size() + updated.size());
+        List<HydratedShop> toInsert = new ArrayList<>(created.size());
         toInsert.addAll(created);
-        toInsert.addAll(updated);
+        List<ShopStockUpdate> toUpdate = List.copyOf(this.updatedShops);
         List<BlockPosition> deleted = List.copyOf(this.deletedShops);
         if (deleted.isEmpty() && toInsert.isEmpty()) {
             return null;
@@ -66,6 +66,7 @@ public class ChestShopStateImpl implements ChestShopState {
         return (database) -> {
             deleted.forEach(database::deleteShopByPos);
             database.insertShops(toInsert);
+            database.updateShops(toUpdate);
             database.flushSession();
         };
     }
@@ -86,13 +87,8 @@ public class ChestShopStateImpl implements ChestShopState {
     }
 
     @Override
-    public void queueShopUpdate(@NotNull HydratedShop shop) {
-        BlockPosition position = shop.blockPosition();
-        this.createdShops.remove(position);
-        this.deletedShops.remove(position);
-        this.updatedShops.put(position, shop);
-        this.shopCache.put(position, Boolean.TRUE);
-        this.knownItemCodes.add(shop.item().itemCode());
+    public void queueShopUpdate(@NotNull ShopStockUpdate shop) {
+        this.updatedShops.add(shop);
     }
 
     @Override
