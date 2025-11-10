@@ -15,11 +15,14 @@ import io.github.md5sha256.chestshopdatabase.model.ShopStockUpdate;
 import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
 import io.github.md5sha256.chestshopdatabase.util.InventoryUtil;
 import io.github.md5sha256.chestshopdatabase.util.UnsafeChestShopSign;
+import org.bukkit.block.Block;
 import org.bukkit.block.Container;
 import org.bukkit.block.Sign;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
@@ -85,9 +88,9 @@ public record ChestShopListener(
     }
 
     private void toUpdateShopStock(@NotNull Sign sign,
-                                @NotNull String[] lines,
-                                @NotNull Container container,
-                                Consumer<ShopStockUpdate> callback) {
+                                   @NotNull String[] lines,
+                                   @NotNull Container container,
+                                   Consumer<ShopStockUpdate> callback) {
         UUID world = sign.getWorld().getUID();
         int posX = sign.getX();
         int posY = sign.getY();
@@ -146,6 +149,24 @@ public record ChestShopListener(
         if (!this.shopState.cachedShopRegistered(new BlockPosition(world, posX, posY, posZ))) {
             toHydratedShop(sign, sign.getLines(), container, this.shopState::queueShopCreation);
         } else {
+            toUpdateShopStock(sign, sign.getLines(), container, this.shopState::queueShopUpdate);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (event.getInventory().getType() == InventoryType.ENDER_CHEST
+                || event.getInventory().getLocation() == null) {
+            return;
+        }
+        Block block = event.getInventory().getLocation().getBlock();
+        if (!uBlock.couldBeShopContainer(block)
+                || !(block.getState(false) instanceof Container container)
+        ) {
+            return;
+        }
+        for (Sign sign : uBlock.findConnectedShopSigns(event.getInventory().getHolder(false))) {
+            if (sign == null) continue;
             toUpdateShopStock(sign, sign.getLines(), container, this.shopState::queueShopUpdate);
         }
     }
