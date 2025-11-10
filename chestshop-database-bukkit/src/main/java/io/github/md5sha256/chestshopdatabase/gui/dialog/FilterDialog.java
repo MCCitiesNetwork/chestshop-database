@@ -20,6 +20,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class FilterDialog {
 
@@ -31,16 +32,27 @@ public class FilterDialog {
                 SingleOptionDialogInput.OptionEntry.create("disabled",
                         Component.text("Off", NamedTextColor.RED),
                         false));
-        List<? extends DialogInput> inputs = Arrays.stream(ShopType.values())
+
+        Stream<SingleOptionDialogInput> typeInputs = Arrays.stream(ShopType.values())
                 .map(type -> DialogInput.singleOption(type.name(),
                                 Component.text(type.displayName()),
                                 options)
-                        .build())
-                .toList();
+                        .build());
+
+        Stream<SingleOptionDialogInput> emptyFullInputs = Stream.of(
+                DialogInput.singleOption(
+                        "show_empty",
+                        Component.text("Empty Shops"),
+                        options).build(),
+                DialogInput.singleOption(
+                        "show_full",
+                        Component.text("Full Shops"),
+                        options).build()
+        );
 
         return DialogBase.builder(Component.text("Select Shop Types"))
                 .canCloseWithEscape(true)
-                .inputs(inputs)
+                .inputs(Stream.concat(typeInputs, emptyFullInputs).toList())
                 .build();
     }
 
@@ -75,6 +87,12 @@ public class FilterDialog {
                 }
             }
             findState.setShopTypes(included);
+
+            String show_empty = view.getText("show_empty");
+            String show_full = view.getText("show_full");
+            if (show_empty != null) { findState.setHideEmptyShops(show_empty.equals("disabled")); }
+            if (show_full != null) { findState.setHideFullShops(show_full.equals("disabled")); }
+
             audience.showDialog(prevDialog.get());
         };
     }
