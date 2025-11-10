@@ -23,6 +23,7 @@ import net.kyori.adventure.text.event.ClickCallback;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -68,7 +69,8 @@ public class FindDialog {
             @NotNull Audience audience,
             @NotNull FindState findState,
             @NotNull FindTaskFactory taskFactory,
-            @NotNull ShopResultsGUI resultsGUI) {
+            @NotNull ShopResultsGUI resultsGUI,
+            @NotNull Plugin plugin) {
         audience.showDialog(waitScreen());
         if (!(audience instanceof Player player)) {
             return;
@@ -87,7 +89,7 @@ public class FindDialog {
             }
             Component title = Component.text("Shop results for " + findState.item().itemCode());
             ChestGui chestGui = resultsGUI.createGui(title, res, findState.item().itemStack(), findState.queryPosition());
-            chestGui.show(player);
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> chestGui.show(player), 1);
         });
     }
 
@@ -95,10 +97,11 @@ public class FindDialog {
     public static Dialog createMainPageDialog(
             @NotNull FindState findState,
             @NotNull FindTaskFactory taskFactory,
-            @NotNull ShopResultsGUI resultsGUI
+            @NotNull ShopResultsGUI resultsGUI,
+            @NotNull Plugin plugin
     ) {
         DialogAction submitAction = DialogAction.customClick((view, audience) -> {
-            submit(view, audience, findState, taskFactory, resultsGUI);
+            submit(view, audience, findState, taskFactory, resultsGUI, plugin);
         }, ClickCallback.Options.builder().uses(1).build());
         DialogAction buyCheapAction = DialogAction.customClick((view, audience) -> {
             findState.setShopTypes(List.of(ShopType.BUY, ShopType.BOTH));
@@ -107,7 +110,7 @@ public class FindDialog {
             findState.setSortDirection(ShopAttribute.UNIT_BUY_PRICE, SortDirection.ASCENDING);
             findState.setSortDirection(ShopAttribute.DISTANCE, SortDirection.ASCENDING);
             findState.setHideEmptyShops(true);
-            submit(view, audience, findState, taskFactory, resultsGUI);
+            submit(view, audience, findState, taskFactory, resultsGUI, plugin);
         }, ClickCallback.Options.builder().uses(1).build());
         DialogAction buyNearbyAction = DialogAction.customClick((view, audience) -> {
             findState.setShopTypes(List.of(ShopType.BUY, ShopType.BOTH));
@@ -116,7 +119,7 @@ public class FindDialog {
             findState.setSortDirection(ShopAttribute.DISTANCE, SortDirection.ASCENDING);
             findState.setSortDirection(ShopAttribute.UNIT_BUY_PRICE, SortDirection.ASCENDING);
             findState.setHideEmptyShops(true);
-            submit(view, audience, findState, taskFactory, resultsGUI);
+            submit(view, audience, findState, taskFactory, resultsGUI, plugin);
         }, ClickCallback.Options.builder().uses(1).build());
         DialogAction sellBestPriceAction = DialogAction.customClick((view, audience) -> {
             findState.setShopTypes(List.of(ShopType.SELL, ShopType.BOTH));
@@ -127,7 +130,7 @@ public class FindDialog {
             findState.setSortDirection(ShopAttribute.REMAINING_CAPACITY, SortDirection.DESCENDING);
             findState.setSortDirection(ShopAttribute.DISTANCE, SortDirection.ASCENDING);
             findState.setHideFullShops(true);
-            submit(view, audience, findState, taskFactory, resultsGUI);
+            submit(view, audience, findState, taskFactory, resultsGUI, plugin);
         }, ClickCallback.Options.builder().uses(1).build());
 
         ActionButton submitButton = ActionButton.builder(Component.text("Search", NamedTextColor.GREEN))
@@ -154,12 +157,12 @@ public class FindDialog {
                 ActionButton.builder(Component.text("Filters"))
                         .action(DialogUtil.openDialogAction(() -> FilterDialog.createFiltersDialog(
                                 findState,
-                                () -> createMainPageDialog(findState, taskFactory, resultsGUI))))
+                                () -> createMainPageDialog(findState, taskFactory, resultsGUI, plugin))))
                         .build(),
                 ActionButton.builder(Component.text("Sorting"))
                         .action(DialogUtil.openDialogAction(() -> SortDialog.createSortDialog(
                                 findState,
-                                () -> createMainPageDialog(findState, taskFactory, resultsGUI))))
+                                () -> createMainPageDialog(findState, taskFactory, resultsGUI, plugin))))
                         .build(),
                 submitButton
         );

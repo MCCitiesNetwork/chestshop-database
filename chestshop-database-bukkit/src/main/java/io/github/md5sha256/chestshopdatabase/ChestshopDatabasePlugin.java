@@ -111,7 +111,8 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         var findCommand = new FindCommand(this.shopState,
                 this.discoverer,
                 findTaskFactory,
-                this.gui);
+                this.gui,
+                this);
         List<CommandBean> commands = List.of(
                 findCommand,
                 new ResyncCommand(this, resyncTaskFactory)

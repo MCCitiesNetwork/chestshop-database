@@ -18,12 +18,14 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 public record FindCommand(@NotNull ChestShopState shopState,
                           @NotNull ItemDiscoverer discoverer,
                           @NotNull FindTaskFactory taskFactory,
-                          @NotNull ShopResultsGUI gui) implements CommandBean.Single {
+                          @NotNull ShopResultsGUI gui,
+                          @NotNull Plugin plugin) implements CommandBean.Single {
 
 
     @Override
@@ -82,7 +84,7 @@ public record FindCommand(@NotNull ChestShopState shopState,
             );
             findState.setWorld(queryPosition.world());
             findState.setQueryPosition(queryPosition);
-            Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui);
+            Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui, plugin);
             player.showDialog(dialog);
         });
     }
@@ -108,7 +110,7 @@ public record FindCommand(@NotNull ChestShopState shopState,
             );
             findState.setWorld(queryPosition.world());
             findState.setQueryPosition(queryPosition);
-            Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui);
+            Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui, plugin);
             player.showDialog(dialog);
         });
     }
