@@ -41,6 +41,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class ResyncTaskFactory {
 
@@ -150,19 +151,26 @@ public class ResyncTaskFactory {
     }
 
 
-    private void processChunks(@NotNull List<Bucket<Chunk>> buckets,
+    private void processChunks(@NotNull List<Bucket<Chunks>> buckets,
                                @NotNull TaskProgress progress) {
-        for (Bucket<Chunk> bucket : buckets) {
+        for (Bucket<Chunks> bucket : buckets) {
             processChunk(bucket.chunk(), bucket.blocks(), progress);
         }
     }
 
-    private void processChunk(@Nullable Chunk chunk,
+    private void processChunk(@NotNull Chunks chunks,
                               @NotNull List<BlockPosition> blocks,
                               @NotNull TaskProgress progress) {
+        Chunk chunk = chunks.mainChunk();
+
         if (chunk == null) {
             for (BlockPosition blockPosition : blocks) {
                 chestShopState.queueShopDeletion(blockPosition).thenRun(progress::markCompleted);
+            }
+            for (Chunk neighbour : chunks.neighbours()) {
+                if (neighbour != null) {
+                    neighbour.removePluginChunkTicket(this.plugin);
+                }
             }
             return;
         }
@@ -207,12 +215,18 @@ public class ResyncTaskFactory {
         for (BlockPosition blockPosition : toDelete) {
             chestShopState.queueShopDeletion(blockPosition).thenRun(progress::markCompleted);
         }
+        chunk.removePluginChunkTicket(this.plugin);
+        for (Chunk neighbour : chunks.neighbours()) {
+            if (neighbour != null) {
+                neighbour.removePluginChunkTicket(this.plugin);
+            }
+        }
     }
 
 
     private void processBuckets(@NotNull List<Bucket<ChunkPosition>> buckets,
                                 @NotNull TaskProgress progress,
-                                @NotNull TickUtil<Bucket<Chunk>> chunkProcessor) {
+                                @NotNull TickUtil<Bucket<Chunks>> chunkProcessor) {
         Server server = this.plugin.getServer();
         for (Bucket<ChunkPosition> bucket : buckets) {
             ChunkPosition chunkPosition = bucket.chunk();
@@ -224,8 +238,35 @@ public class ResyncTaskFactory {
                 }
                 continue;
             }
-            world.getChunkAtAsync(chunkPosition.chunkX(), chunkPosition.chunkZ(), false)
-                    .thenAccept(chunk -> chunkProcessor.queueElement(new Bucket<>(chunk, blocks)));
+            CompletableFuture<Chunk> mainFuture = world.getChunkAtAsync(chunkPosition.chunkX(),
+                    chunkPosition.chunkZ(),
+                    false);
+            int chunkX = chunkPosition.chunkX();
+            int chunkZ = chunkPosition.chunkZ();
+            List<CompletableFuture<Chunk>> neighbourFutures = Stream.of(
+                    world.getChunkAtAsync(chunkX + 1, chunkZ, false),
+                    world.getChunkAtAsync(chunkX - 1, chunkZ, false),
+                    world.getChunkAtAsync(chunkX, chunkZ + 1, false),
+                    world.getChunkAtAsync(chunkX, chunkZ - 1, false)
+            ).map(future -> future.thenApply(chunk -> {
+                if (chunk != null) {
+                    chunk.addPluginChunkTicket(this.plugin);
+                }
+                return chunk;
+            })).toList();
+            List<CompletableFuture<Chunk>> allFutures = new ArrayList<>();
+            allFutures.add(mainFuture);
+            allFutures.addAll(neighbourFutures);
+            CompletableFuture.allOf(allFutures.toArray(CompletableFuture[]::new)).thenRun(() -> {
+                Chunk chunk = mainFuture.getNow(null);
+                if (chunk != null) {
+                    chunk.addPluginChunkTicket(this.plugin);
+                }
+                List<Chunk> neighbours = neighbourFutures.stream()
+                        .map(future -> future.getNow(null))
+                        .toList();
+                chunkProcessor.queueElement(new Bucket<>(new Chunks(chunk, neighbours), blocks));
+            });
         }
     }
 
@@ -248,7 +289,7 @@ public class ResyncTaskFactory {
             TaskProgress progress = new TaskProgress(numBlocks);
             future.complete(progress);
 
-            TickUtil<Bucket<Chunk>> processUtil = new TickUtil<>(list -> processChunks(list,
+            TickUtil<Bucket<Chunks>> processUtil = new TickUtil<>(list -> processChunks(list,
                     progress));
             TickUtil<Bucket<ChunkPosition>> loadUtil = new TickUtil<>(list -> processBuckets(list,
                     progress,
@@ -258,13 +299,19 @@ public class ResyncTaskFactory {
                     this.scheduler,
                     chunksPerInterval,
                     intervalTicks);
-            processUtil.schedulePollTask(this.plugin, this.scheduler, chunksPerInterval, intervalTicks);
+            processUtil.schedulePollTask(this.plugin,
+                    this.scheduler,
+                    chunksPerInterval,
+                    intervalTicks);
             progress.chainOnComplete(() -> {
                 loadUtil.cancelPollTask();
                 processUtil.cancelPollTask();
             });
         });
         return future;
+    }
+
+    private record Chunks(@Nullable Chunk mainChunk, @NotNull List<@Nullable Chunk> neighbours) {
     }
 
     private record Bucket<T>(@NotNull T chunk, @NotNull List<BlockPosition> blocks) {
