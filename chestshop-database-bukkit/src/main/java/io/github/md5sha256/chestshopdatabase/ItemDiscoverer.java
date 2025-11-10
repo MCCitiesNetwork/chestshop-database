@@ -72,7 +72,7 @@ public class ItemDiscoverer {
                 ItemParseEvent parseEvent = new ItemParseEvent(code);
                 pluginManager.callEvent(parseEvent);
                 itemStack = parseEvent.getItem();
-            } catch (Throwable ex) {
+            } catch (Exception ex) {
                 this.logger.warning("Failed to lookup item stack from item code!");
                 ex.printStackTrace();
             }
@@ -90,7 +90,7 @@ public class ItemDiscoverer {
                 ItemStringQueryEvent parseEvent = new ItemStringQueryEvent(item);
                 pluginManager.callEvent(parseEvent);
                 itemCode = parseEvent.getItemString();
-            } catch (Throwable ex) {
+            } catch (Exception ex) {
                 this.logger.warning("Failed to lookup item code from item stack!");
                 ex.printStackTrace();
             }
