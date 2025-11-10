@@ -19,6 +19,7 @@ import io.github.md5sha256.chestshopdatabase.util.InventoryUtil;
 import io.github.md5sha256.chestshopdatabase.util.TickUtil;
 import org.bukkit.Chunk;
 import org.bukkit.Server;
+import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
@@ -153,17 +154,21 @@ public class ResyncTaskFactory {
                               @NotNull TaskProgress progress) {
         UUID world = chunk.getWorld().getUID();
         Set<BlockPosition> known = new HashSet<>(blocks);
-        Set<BlockPosition> knownProcessed = new HashSet<>();
-        for (BlockState state : chunk.getTileEntities(entity -> entity instanceof Sign, false)) {
+        Set<BlockPosition> knownProcessed = new HashSet<>(known.size());
+        for (BlockState state : chunk.getTileEntities(block -> Tag.SIGNS.isTagged(block.getType()), false)) {
             Sign sign = (Sign) state;
-            Container container = uBlock.findConnectedContainer(sign);
-            if (container == null) {
-                continue;
-            }
             BlockPosition position = new BlockPosition(world,
                     sign.getX(),
                     sign.getY(),
                     sign.getZ());
+            Container container = uBlock.findConnectedContainer(sign);
+            if (container == null) {
+                if (known.contains(position)) {
+                    knownProcessed.add(position);
+                }
+                continue;
+            }
+
             if (known.contains(position)) {
                 toUpdateShopStock(sign, sign.getLines(), container, update -> {
                     if (update != null) {
