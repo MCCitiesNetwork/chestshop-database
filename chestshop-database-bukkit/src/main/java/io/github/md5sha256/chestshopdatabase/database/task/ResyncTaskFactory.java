@@ -1,12 +1,16 @@
 package io.github.md5sha256.chestshopdatabase.database.task;
 
+import com.Acrobot.Breeze.Utils.PriceUtil;
 import com.Acrobot.ChestShop.Signs.ChestShopSign;
 import com.Acrobot.ChestShop.Utils.uBlock;
+import com.google.common.collect.Sets;
 import io.github.md5sha256.chestshopdatabase.ChestShopState;
 import io.github.md5sha256.chestshopdatabase.ExecutorState;
 import io.github.md5sha256.chestshopdatabase.ItemDiscoverer;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseMapper;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseSession;
+import io.github.md5sha256.chestshopdatabase.model.ChestshopItem;
+import io.github.md5sha256.chestshopdatabase.model.HydratedShop;
 import io.github.md5sha256.chestshopdatabase.model.ShopStockUpdate;
 import io.github.md5sha256.chestshopdatabase.task.TaskProgress;
 import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
@@ -15,9 +19,7 @@ import io.github.md5sha256.chestshopdatabase.util.InventoryUtil;
 import io.github.md5sha256.chestshopdatabase.util.TickUtil;
 import org.bukkit.Chunk;
 import org.bukkit.Server;
-import org.bukkit.Tag;
 import org.bukkit.World;
-import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Container;
 import org.bukkit.block.Sign;
@@ -25,10 +27,14 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.jetbrains.annotations.NotNull;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -43,13 +49,11 @@ public class ResyncTaskFactory {
     private final Plugin plugin;
     private final BukkitScheduler scheduler;
 
-    public ResyncTaskFactory(
-            @NotNull ChestShopState chestShopState,
-            @NotNull ItemDiscoverer discoverer,
-            @NotNull Supplier<DatabaseSession> sessionSupplier,
-            @NotNull ExecutorState executorState,
-            @NotNull Plugin plugin
-    ) {
+    public ResyncTaskFactory(@NotNull ChestShopState chestShopState,
+                             @NotNull ItemDiscoverer discoverer,
+                             @NotNull Supplier<DatabaseSession> sessionSupplier,
+                             @NotNull ExecutorState executorState,
+                             @NotNull Plugin plugin) {
         this.chestShopState = chestShopState;
         this.discoverer = discoverer;
         this.sessionSupplier = sessionSupplier;
@@ -71,6 +75,51 @@ public class ResyncTaskFactory {
         return buckets;
     }
 
+    private static double toDouble(BigDecimal decimal) {
+        return decimal.setScale(4, RoundingMode.HALF_UP).stripTrailingZeros().doubleValue();
+    }
+
+    private <T> CompletableFuture<T> toHydratedShop(@NotNull Sign sign,
+                                                    @NotNull String[] lines,
+                                                    @NotNull Container container,
+                                                    Function<HydratedShop, T> callback) {
+        UUID world = sign.getWorld().getUID();
+        int posX = sign.getX();
+        int posY = sign.getY();
+        int posZ = sign.getZ();
+        String itemCode = ChestShopSign.getItem(lines);
+        String owner = ChestShopSign.getOwner(lines);
+        int quantity = ChestShopSign.getQuantity(lines);
+        String priceLine = ChestShopSign.getPrice(lines);
+        BigDecimal buyPriceDecimal = PriceUtil.getExactBuyPrice(priceLine);
+        BigDecimal sellPriceDecimal = PriceUtil.getExactSellPrice(priceLine);
+        Double buyPrice = buyPriceDecimal.equals(PriceUtil.NO_PRICE) ? null : toDouble(
+                buyPriceDecimal);
+        Double sellPrice = sellPriceDecimal.equals(PriceUtil.NO_PRICE) ? null : toDouble(
+                sellPriceDecimal);
+        CompletableFuture<T> future = new CompletableFuture<>();
+        this.discoverer.discoverItemStackFromCode(itemCode, itemStack -> {
+            if (itemStack == null || itemStack.isEmpty()) {
+                // FIXME log warning
+                future.complete(callback.apply(null));
+                return;
+            }
+            HydratedShop shop = new HydratedShop(world,
+                    posX,
+                    posY,
+                    posZ,
+                    new ChestshopItem(itemStack, itemCode),
+                    owner,
+                    buyPrice,
+                    sellPrice,
+                    quantity,
+                    InventoryUtil.countItems(itemStack, container.getInventory()),
+                    InventoryUtil.remainingCapacity(itemStack, container.getInventory()));
+            future.complete(callback.apply(shop));
+        });
+        return future;
+    }
+
     private <T> CompletableFuture<T> toUpdateShopStock(@NotNull Sign sign,
                                                        @NotNull String[] lines,
                                                        @NotNull Container container,
@@ -87,66 +136,60 @@ public class ResyncTaskFactory {
                 future.complete(callback.apply(null));
                 return;
             }
-            ShopStockUpdate shopStockUpdate = new ShopStockUpdate(
-                    world,
+            ShopStockUpdate shopStockUpdate = new ShopStockUpdate(world,
                     posX,
                     posY,
                     posZ,
                     InventoryUtil.countItems(itemStack, container.getInventory()),
-                    InventoryUtil.remainingCapacity(itemStack, container.getInventory())
-            );
+                    InventoryUtil.remainingCapacity(itemStack, container.getInventory()));
             future.complete(callback.apply(shopStockUpdate));
         });
         return future;
     }
 
-    private CompletableFuture<Void> processBlockPosition(@NotNull Chunk chunk,
-                                                         @NotNull BlockPosition pos) {
-        try {
-            Block block = chunk.getBlock(pos.xChunk(), pos.y(), pos.zChunk());
-            if (!Tag.SIGNS.isTagged(block.getType())) {
-                return CompletableFuture.completedFuture(null);
+
+    private void processChunk(@NotNull Chunk chunk,
+                              @NotNull List<BlockPosition> blocks,
+                              @NotNull TaskProgress progress) {
+        UUID world = chunk.getWorld().getUID();
+        Set<BlockPosition> known = new HashSet<>(blocks);
+        Set<BlockPosition> knownProcessed = new HashSet<>();
+        for (BlockState state : chunk.getTileEntities(entity -> entity instanceof Sign, false)) {
+            Sign sign = (Sign) state;
+            Container container = uBlock.findConnectedContainer(sign);
+            if (container == null) {
+                continue;
             }
-            BlockState blockState = block.getState(false);
-            if (blockState instanceof Sign sign) {
-                Container container = uBlock.findConnectedContainer(sign);
-                if (container != null) {
-                    return toUpdateShopStock(sign,
-                            sign.getLines(),
-                            container,
-                            update -> {
-                                if (update != null) {
-                                    return this.chestShopState.queueShopUpdate(update);
-                                }
-                                return CompletableFuture.<Void>completedFuture(null);
-                            })
-                            .thenCompose(Function.identity());
-                } else {
-                    // Don't do anything...?
-                    return CompletableFuture.completedFuture(null);
-                }
+            BlockPosition position = new BlockPosition(world,
+                    sign.getX(),
+                    sign.getY(),
+                    sign.getZ());
+            if (known.contains(position)) {
+                toUpdateShopStock(sign, sign.getLines(), container, update -> {
+                    if (update != null) {
+                        return this.chestShopState.queueShopUpdate(update);
+                    }
+                    return CompletableFuture.<Void>completedFuture(null);
+                }).thenCompose(Function.identity()).thenRun(progress::markCompleted);
+                knownProcessed.add(position);
+            } else {
+                progress.incrementTotal();
+                toHydratedShop(sign, sign.getLines(), container, shop -> {
+                    if (shop != null) {
+                        return this.chestShopState.queueShopCreation(shop);
+                    }
+                    return CompletableFuture.<Void>completedFuture(null);
+                }).thenCompose(Function.identity()).thenRun(progress::markCompleted);
             }
-            return chestShopState.queueShopDeletion(pos);
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
-        return CompletableFuture.completedFuture(null);
-    }
-
-
-    private void processChunk(
-            @NotNull Chunk chunk,
-            @NotNull List<BlockPosition> blocks,
-            @NotNull TaskProgress progress) {
-        for (BlockPosition pos : blocks) {
-            processBlockPosition(chunk, pos).thenRun(progress::markCompleted);
+        Set<BlockPosition> toDelete = Sets.difference(known, knownProcessed);
+        for (BlockPosition blockPosition : toDelete) {
+            chestShopState.queueShopDeletion(blockPosition).thenRun(progress::markCompleted);
         }
     }
 
-    private void processBuckets(
-            @NotNull List<Bucket> buckets,
-            @NotNull TaskProgress progress
-    ) {
+
+    private void processBuckets(@NotNull List<Bucket> buckets, @NotNull TaskProgress progress) {
         Server server = this.plugin.getServer();
         for (Bucket bucket : buckets) {
             ChunkPosition chunkPosition = bucket.chunkPos();
@@ -168,10 +211,7 @@ public class ResyncTaskFactory {
     }
 
     @NotNull
-    public CompletableFuture<TaskProgress> triggerResync(
-            int chunksPerInterval,
-            int intervalTicks
-    ) {
+    public CompletableFuture<TaskProgress> triggerResync(int chunksPerInterval, int intervalTicks) {
         CompletableFuture<TaskProgress> future = new CompletableFuture<>();
         this.executorState.dbExec().submit(() -> {
             List<Bucket> buckets;

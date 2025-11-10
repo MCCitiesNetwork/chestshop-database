@@ -8,12 +8,12 @@ import java.util.concurrent.atomic.AtomicReference;
 public class TaskProgress {
 
     private final AtomicInteger completed;
-    private final int total;
+    private final AtomicInteger total;
     private final AtomicReference<Runnable> onComplete = new AtomicReference<>();
 
     public TaskProgress(int total) {
         this.completed = new AtomicInteger(0);
-        this.total = total;
+        this.total = new AtomicInteger(total);
     }
 
     public void chainOnComplete(@NotNull Runnable onComplete) {
@@ -31,22 +31,26 @@ public class TaskProgress {
         }
     }
 
+    public void incrementTotal() {
+        this.total.getAndIncrement();
+    }
+
     public int total() {
-        return this.total;
+        return this.total.get();
     }
 
     public boolean isDone() {
-        return this.completed.get() == this.total;
+        return this.completed.get() == this.total.get();
     }
 
     public void markCompleted() {
-        if (this.completed.incrementAndGet() == this.total) {
+        if (this.completed.incrementAndGet() == this.total.get()) {
             triggerCompleted();
         }
     }
 
     public void markCompleted(int amount) {
-        if (this.completed.addAndGet(amount) == this.total) {
+        if (this.completed.addAndGet(amount) == this.total.get()) {
             triggerCompleted();
         }
     }
