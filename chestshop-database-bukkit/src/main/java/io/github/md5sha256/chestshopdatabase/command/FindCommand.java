@@ -1,6 +1,7 @@
 package io.github.md5sha256.chestshopdatabase.command;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.md5sha256.chestshopdatabase.ChestShopState;
 import io.github.md5sha256.chestshopdatabase.ItemDiscoverer;
@@ -10,6 +11,7 @@ import io.github.md5sha256.chestshopdatabase.gui.ShopComparators;
 import io.github.md5sha256.chestshopdatabase.gui.ShopResultsGUI;
 import io.github.md5sha256.chestshopdatabase.gui.dialog.FindDialog;
 import io.github.md5sha256.chestshopdatabase.model.ChestshopItem;
+import io.github.md5sha256.chestshopdatabase.preview.PreviewHandler;
 import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -25,7 +27,8 @@ public record FindCommand(@NotNull ChestShopState shopState,
                           @NotNull ItemDiscoverer discoverer,
                           @NotNull FindTaskFactory taskFactory,
                           @NotNull ShopResultsGUI gui,
-                          @NotNull Plugin plugin) implements CommandBean.Single {
+                          @NotNull Plugin plugin,
+                          @NotNull PreviewHandler previewHandler) implements CommandBean.Single {
 
 
     @Override
@@ -59,7 +62,27 @@ public record FindCommand(@NotNull ChestShopState shopState,
                             processCommandWithItemCode(player, itemCode);
                             return Command.SINGLE_SUCCESS;
                         })
-                );
+                ).then(buildToggle());
+    }
+
+    private LiteralArgumentBuilder<CommandSourceStack> buildToggle() {
+        return Commands.literal("toggle")
+                .then(buildTogglePreview());
+    }
+
+    private LiteralArgumentBuilder<CommandSourceStack> buildTogglePreview() {
+        return Commands.literal("preview")
+                .then(Commands.argument("visible", BoolArgumentType.bool())
+                        .requires(sourceStack -> sourceStack.getSender() instanceof Player player
+                                && player.hasPermission("csdb.preview.toggle"))
+                        .executes(ctx -> {
+                            if (!(ctx.getSource().getSender() instanceof Player player)) {
+                                return Command.SINGLE_SUCCESS;
+                            }
+                            boolean visible = ctx.getArgument("visible", Boolean.class);
+                            previewHandler.setVisible(player, visible);
+                            return Command.SINGLE_SUCCESS;
+                        }));
     }
 
     private void processCommandWithItem(@NotNull Player player, @NotNull ItemStack itemStack) {

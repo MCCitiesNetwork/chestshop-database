@@ -29,3 +29,5 @@ permissions:
   csdb.resync:
     description: "Permission to run /csdb resync"
     default: op
+  csdb.preview.toggle:
+    description: "Permission to toggle shop previews via /csdb find toggle preview"

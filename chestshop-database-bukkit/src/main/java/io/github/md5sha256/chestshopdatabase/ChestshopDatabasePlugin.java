@@ -88,7 +88,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         // Plugin startup logic
         UnsafeChestShopSign.init();
         ShopReplacements.registerDefaults(this.replacements);
-        previewHandler = new PreviewHandler();
+        previewHandler = new PreviewHandler(this);
         shopState = new ChestShopStateImpl(Duration.ofMinutes(5));
         discoverer = new ItemDiscoverer(50, Duration.ofMinutes(5), 50, getServer(), getLogger());
         BukkitScheduler scheduler = getServer().getScheduler();
@@ -134,7 +134,8 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                 this.discoverer,
                 findTaskFactory,
                 this.gui,
-                this);
+                this,
+                this.previewHandler);
         List<CommandBean> commands = List.of(
                 findCommand,
                 new ResyncCommand(this, resyncTaskFactory),
