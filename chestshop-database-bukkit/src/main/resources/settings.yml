@@ -1,5 +1,5 @@
 shop-template-buy:
-  material: HOPPER_MINECART
+  material: CHEST_MINECART
   display-name: <bold><green>%owner%
   lore:
     - '<aqua>Buy Price: %buy-price%, Sell Price: %sell-price%'
@@ -10,7 +10,7 @@ shop-template-buy:
     - '<red>Distance: %distance%'
     - '<red>Location: %x%, %y%, %z% (%world%)'
 shop-template-sell:
-  material: CHEST_MINECART
+  material: HOPPER_MINECART
   display-name: <bold><green>%owner%
   lore:
     - '<aqua>Buy Price: %buy-price%, Sell Price: %sell-price%'
