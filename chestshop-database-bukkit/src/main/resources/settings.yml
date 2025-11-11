@@ -1,1 +1,34 @@
+shop-template-buy:
+  material: HOPPER_MINECART
+  display-name: <bold><green>%owner%
+  lore:
+    - '<aqua>Buy Price: %buy-price%, Sell Price: %sell-price%'
+    - '<aqua>Unit Buy Price: %buy-price-unit%, Unit Sell Price: %sell-price-unit%'
+    - '<light_purple>Quantity: %quantity%'
+    - '<yellow>Stock: %stock%'
+    - '<yellow>Remaining Capacity: %capacity%'
+    - '<red>Distance: %distance%'
+    - '<red>Location: %x%, %y%, %z% (%world%)'
+shop-template-sell:
+  material: CHEST_MINECART
+  display-name: <bold><green>%owner%
+  lore:
+    - '<aqua>Buy Price: %buy-price%, Sell Price: %sell-price%'
+    - '<aqua>Unit Buy Price: %buy-price-unit%, Unit Sell Price: %sell-price-unit%'
+    - '<light_purple>Quantity: %quantity%'
+    - '<yellow>Stock: %stock%'
+    - '<yellow>Remaining Capacity: %capacity%'
+    - '<red>Distance: %distance%'
+    - '<red>Location: %x%, %y%, %z% (%world%)'
+shop-template-both:
+  material: ENDER_CHEST
+  display-name: <bold><green>%owner%
+  lore:
+    - '<aqua>Buy Price: %buy-price%, Sell Price: %sell-price%'
+    - '<aqua>Unit Buy Price: %buy-price-unit%, Unit Sell Price: %sell-price-unit%'
+    - '<light_purple>Quantity: %quantity%'
+    - '<yellow>Stock: %stock%'
+    - '<yellow>Remaining Capacity: %capacity%'
+    - '<red>Distance: %distance%'
+    - '<red>Location: %x%, %y%, %z% (%world%)'
 result-gui-click-command: ''

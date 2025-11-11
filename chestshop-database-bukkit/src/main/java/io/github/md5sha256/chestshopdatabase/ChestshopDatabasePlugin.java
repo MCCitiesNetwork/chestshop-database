@@ -15,12 +15,17 @@ import io.github.md5sha256.chestshopdatabase.database.task.FindTaskFactory;
 import io.github.md5sha256.chestshopdatabase.database.task.ResyncTaskFactory;
 import io.github.md5sha256.chestshopdatabase.gui.ShopResultsGUI;
 import io.github.md5sha256.chestshopdatabase.listener.ChestShopListener;
+import io.github.md5sha256.chestshopdatabase.model.ShopType;
+import io.github.md5sha256.chestshopdatabase.settings.ComponentSerializer;
 import io.github.md5sha256.chestshopdatabase.settings.DatabaseSettings;
+import io.github.md5sha256.chestshopdatabase.settings.DummyData;
 import io.github.md5sha256.chestshopdatabase.settings.MessageContainer;
 import io.github.md5sha256.chestshopdatabase.settings.Settings;
+import io.github.md5sha256.chestshopdatabase.util.SimpleItemStack;
 import io.github.md5sha256.chestshopdatabase.util.UnsafeChestShopSign;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import net.kyori.adventure.text.Component;
 import org.apache.ibatis.session.ExecutorType;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -70,6 +75,12 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
             ex.printStackTrace();
             getServer().getPluginManager().disablePlugin(this);
             return;
+        }
+        try {
+            saveDummyData();
+        } catch (IOException ex) {
+            getLogger().warning("Failed to save dummy data");
+            ex.printStackTrace();
         }
     }
 
@@ -183,6 +194,21 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         this.discoverer.schedulePollTask(this, scheduler, 20, 5);
     }
 
+    private void saveDummyData() throws IOException {
+        Settings dummy = new Settings(
+                SimpleItemStack.fromItemStack(DummyData.shopToIcon(ShopType.BUY)),
+                SimpleItemStack.fromItemStack(DummyData.shopToIcon(ShopType.SELL)),
+                SimpleItemStack.fromItemStack(DummyData.shopToIcon(ShopType.BOTH)),
+                "/commandName <x> <y> <z>"
+        );
+        File file = new File(getDataFolder(), "dummy-settings.yml");
+        YamlConfigurationLoader loader = yamlLoader().file(file).build();
+        ConfigurationNode root = loader.createNode();
+        root.set(dummy);
+        loader.save(root);
+        getLogger().info("dummy data saved!");
+    }
+
     private void initDataFolder() throws IOException {
         File dataFolder = getDataFolder();
         if (!dataFolder.isDirectory()) {
@@ -211,7 +237,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
 
     private YamlConfigurationLoader.Builder yamlLoader() {
         return YamlConfigurationLoader.builder()
-                //.defaultOptions(options -> options.serializers(Serializers.createDefaults()))
+                .defaultOptions(options -> options.serializers(builder -> builder.register(Component.class, ComponentSerializer.MINI_MESSAGE)))
                 .nodeStyle(NodeStyle.BLOCK);
     }
 
@@ -226,7 +252,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
     }
 
     public ConfigurationNode loadMessages() throws IOException {
-        return copyDefaultsYaml("messages.yml");
+        return copyDefaultsYaml("messages");
     }
 
     public CompletableFuture<Void> reloadMessagesAndSettings() throws IOException {
