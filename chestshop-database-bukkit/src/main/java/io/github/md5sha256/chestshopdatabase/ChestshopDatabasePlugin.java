@@ -15,6 +15,7 @@ import io.github.md5sha256.chestshopdatabase.database.task.FindTaskFactory;
 import io.github.md5sha256.chestshopdatabase.database.task.ResyncTaskFactory;
 import io.github.md5sha256.chestshopdatabase.gui.ShopResultsGUI;
 import io.github.md5sha256.chestshopdatabase.listener.ChestShopListener;
+import io.github.md5sha256.chestshopdatabase.settings.DatabaseSettings;
 import io.github.md5sha256.chestshopdatabase.settings.MessageContainer;
 import io.github.md5sha256.chestshopdatabase.settings.Settings;
 import io.github.md5sha256.chestshopdatabase.util.UnsafeChestShopSign;
@@ -53,6 +54,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
     private ChestShopStateImpl shopState;
     private ItemDiscoverer discoverer;
     private Settings settings;
+    private DatabaseSettings databaseSettings;
     private ShopResultsGUI gui;
     private ExecutorState executorState;
     private ReplacementRegistry replacements = new ReplacementRegistry();
@@ -62,7 +64,8 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         try {
             initDataFolder();
             this.settings = loadSettings();
-            loadMessages();
+            this.databaseSettings = loadDatabaseSettings();
+            this.messageContainer.load(loadMessages());
         } catch (IOException ex) {
             ex.printStackTrace();
             getServer().getPluginManager().disablePlugin(this);
@@ -82,7 +85,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         gui = new ShopResultsGUI(this, settings, this.replacements);
         getServer().getPluginManager()
                 .registerEvents(new ChestShopListener(shopState, discoverer), this);
-        SqlSessionFactory sessionFactory = MariaDatabase.buildSessionFactory(this.settings.databaseSettings());
+        SqlSessionFactory sessionFactory = MariaDatabase.buildSessionFactory(this.databaseSettings);
         cacheItemCodes(sessionFactory);
         registerCommands(sessionFactory);
         scheduleTasks(sessionFactory);
@@ -217,47 +220,39 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         return settingsRoot.get(Settings.class);
     }
 
-    public void loadMessages() throws IOException {
-        ConfigurationNode node;
-        try {
-            node = copyDefaultsYaml("messages.yml");
-        } catch (IOException ex) {
-            return;
-        }
-        this.messageContainer.clear();
-        try {
-            this.messageContainer.load(node);
-        } catch (IOException ex) {
-            getLogger().warning("Failed to load messages!");
-            ex.printStackTrace();
-        }
+    private DatabaseSettings loadDatabaseSettings() throws IOException {
+        ConfigurationNode settingsRoot = copyDefaultsYaml("database");
+        return settingsRoot.get(DatabaseSettings.class);
     }
 
-    public CompletableFuture<Void> reloadMessages() throws IOException {
-        CompletableFuture<ConfigurationNode> future = new CompletableFuture<>();
+    public ConfigurationNode loadMessages() throws IOException {
+        return copyDefaultsYaml("messages.yml");
+    }
+
+    public CompletableFuture<Void> reloadMessagesAndSettings() throws IOException {
+        CompletableFuture<Void> future = new CompletableFuture<>();
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
-            String fileName = "messages.yml";
-            File file = new File(getDataFolder(), fileName);
-            YamlConfigurationLoader loader = yamlLoader()
-                    .file(file)
-                    .build();
-            ConfigurationNode node;
+            ConfigurationNode messagesNode;
+            Settings settings;
             try {
-                node = loader.load();
+                messagesNode = loadMessages();
+                settings = loadSettings();
             } catch (IOException ex) {
                 future.completeExceptionally(ex);
                 return;
             }
-            future.complete(node);
+            executorState.mainThreadExec().execute(() -> {
+                this.messageContainer.clear();
+                try {
+                    this.messageContainer.load(messagesNode);
+                } catch (IOException ex) {
+                    getLogger().warning("Failed to load messages!");
+                    ex.printStackTrace();
+                }
+                this.settings = settings;
+                future.complete(null);
+            });
         });
-        return future.thenAcceptAsync((node) -> {
-            this.messageContainer.clear();
-            try {
-                this.messageContainer.load(node);
-            } catch (IOException ex) {
-                getLogger().warning("Failed to load messages!");
-                ex.printStackTrace();
-            }
-        }, this.executorState.mainThreadExec());
+        return future;
     }
 }
