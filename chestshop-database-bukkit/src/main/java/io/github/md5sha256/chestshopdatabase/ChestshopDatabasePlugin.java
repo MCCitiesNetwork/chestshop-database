@@ -9,12 +9,13 @@ import io.github.md5sha256.chestshopdatabase.command.FindCommand;
 import io.github.md5sha256.chestshopdatabase.command.ResyncCommand;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseMapper;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseSession;
-import io.github.md5sha256.chestshopdatabase.database.task.FindTaskFactory;
 import io.github.md5sha256.chestshopdatabase.database.MariaChestshopMapper;
 import io.github.md5sha256.chestshopdatabase.database.MariaDatabase;
+import io.github.md5sha256.chestshopdatabase.database.task.FindTaskFactory;
 import io.github.md5sha256.chestshopdatabase.database.task.ResyncTaskFactory;
 import io.github.md5sha256.chestshopdatabase.gui.ShopResultsGUI;
 import io.github.md5sha256.chestshopdatabase.listener.ChestShopListener;
+import io.github.md5sha256.chestshopdatabase.settings.MessageContainer;
 import io.github.md5sha256.chestshopdatabase.settings.Settings;
 import io.github.md5sha256.chestshopdatabase.util.UnsafeChestShopSign;
 import io.papermc.paper.command.brigadier.Commands;
@@ -48,6 +49,7 @@ import java.util.logging.Logger;
 public final class ChestshopDatabasePlugin extends JavaPlugin {
 
     private final ExecutorService databaseExecutor = Executors.newVirtualThreadPerTaskExecutor();
+    private final MessageContainer messageContainer = new MessageContainer();
     private ChestShopStateImpl shopState;
     private ItemDiscoverer discoverer;
     private Settings settings;
@@ -60,6 +62,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         try {
             initDataFolder();
             this.settings = loadSettings();
+            loadMessages();
         } catch (IOException ex) {
             ex.printStackTrace();
             getServer().getPluginManager().disablePlugin(this);
@@ -212,5 +215,49 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
     private Settings loadSettings() throws IOException {
         ConfigurationNode settingsRoot = copyDefaultsYaml("settings");
         return settingsRoot.get(Settings.class);
+    }
+
+    public void loadMessages() throws IOException {
+        ConfigurationNode node;
+        try {
+            node = copyDefaultsYaml("messages.yml");
+        } catch (IOException ex) {
+            return;
+        }
+        this.messageContainer.clear();
+        try {
+            this.messageContainer.load(node);
+        } catch (IOException ex) {
+            getLogger().warning("Failed to load messages!");
+            ex.printStackTrace();
+        }
+    }
+
+    public CompletableFuture<Void> reloadMessages() throws IOException {
+        CompletableFuture<ConfigurationNode> future = new CompletableFuture<>();
+        getServer().getScheduler().runTaskAsynchronously(this, () -> {
+            String fileName = "messages.yml";
+            File file = new File(getDataFolder(), fileName);
+            YamlConfigurationLoader loader = yamlLoader()
+                    .file(file)
+                    .build();
+            ConfigurationNode node;
+            try {
+                node = loader.load();
+            } catch (IOException ex) {
+                future.completeExceptionally(ex);
+                return;
+            }
+            future.complete(node);
+        });
+        return future.thenAcceptAsync((node) -> {
+            this.messageContainer.clear();
+            try {
+                this.messageContainer.load(node);
+            } catch (IOException ex) {
+                getLogger().warning("Failed to load messages!");
+                ex.printStackTrace();
+            }
+        }, this.executorState.mainThreadExec());
     }
 }
