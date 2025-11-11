@@ -249,7 +249,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
     }
 
     private DatabaseSettings loadDatabaseSettings() throws IOException {
-        ConfigurationNode settingsRoot = copyDefaultsYaml("database");
+        ConfigurationNode settingsRoot = copyDefaultsYaml("database-settings");
         return settingsRoot.get(DatabaseSettings.class);
     }
 
