@@ -43,3 +43,9 @@ CREATE TRIGGER trigger_shop_update_timestamp
 BEGIN
     SET NEW.last_updated = CURRENT_TIMESTAMP;
 END;
+
+CREATE TABLE PreviewPreference
+(
+    player_id UUID PRIMARY KEY,
+    visible   BOOLEAN DEFAULT TRUE
+);

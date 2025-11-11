@@ -2,7 +2,7 @@ package io.github.md5sha256.chestshopdatabase;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import io.github.md5sha256.chestshopdatabase.database.DatabaseMapper;
+import io.github.md5sha256.chestshopdatabase.database.ChestshopMapper;
 import io.github.md5sha256.chestshopdatabase.model.HydratedShop;
 import io.github.md5sha256.chestshopdatabase.model.ShopStockUpdate;
 import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
@@ -41,7 +41,7 @@ public class ChestShopStateImpl implements ChestShopState {
     }
 
 
-    public void cacheItemCodes(@NotNull Logger logger, @NotNull DatabaseMapper database) {
+    public void cacheItemCodes(@NotNull Logger logger, @NotNull ChestshopMapper database) {
         try {
             this.knownItemCodes.addAll(database.selectItemCodes());
         } catch (Exception ex) {
@@ -55,7 +55,7 @@ public class ChestShopStateImpl implements ChestShopState {
     }
 
 
-    public @Nullable Consumer<DatabaseMapper> flushTask() {
+    public @Nullable Consumer<ChestshopMapper> flushTask() {
         List<HydratedShop> created = List.copyOf(this.createdShops.values());
         List<HydratedShop> toInsert = new ArrayList<>(created.size());
         toInsert.addAll(created);

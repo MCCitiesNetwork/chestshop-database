@@ -11,6 +11,7 @@ public record Settings(
         @Setting("shop-template-buy") @Required SimpleItemStack buyShopTemplate,
         @Setting("shop-template-sell") @Required SimpleItemStack sellShopTemplate,
         @Setting("shop-template-both") @Required SimpleItemStack bothShopTemplate,
-        @Setting("shop-icon-click-command") @Nullable String clickCommand
+        @Setting("shop-icon-click-command") @Nullable String clickCommand,
+        @Setting("shop-preview-default-visibility") boolean previewDefaultVisibility
 ) {
 }

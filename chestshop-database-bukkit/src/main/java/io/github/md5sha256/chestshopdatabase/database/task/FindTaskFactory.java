@@ -25,7 +25,7 @@ public record FindTaskFactory(@NotNull Supplier<DatabaseSession> sessionSupplier
         FindState copy = new FindState(findState);
         return CompletableFuture.supplyAsync(() -> {
                     try (DatabaseSession session = sessionSupplier.get()) {
-                        return session.mapper().selectShopsByShopTypeWorldItem(
+                        return session.chestshopMapper().selectShopsByShopTypeWorldItem(
                                 copy.shopTypes(),
                                 copy.world().orElse(null),
                                 copy.item().itemCode()

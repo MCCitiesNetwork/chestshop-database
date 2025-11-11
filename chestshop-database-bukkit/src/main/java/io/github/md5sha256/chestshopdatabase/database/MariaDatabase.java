@@ -29,6 +29,7 @@ public class MariaDatabase {
         Configuration configuration = new Configuration(environment);
         configuration.getTypeHandlerRegistry().register(UUID.class, JdbcType.OTHER, UUIDAsBin16Handler.class);
         configuration.addMapper(MariaChestshopMapper.class);
+        configuration.addMapper(MariaPreferenceMapper.class);
         return new SqlSessionFactoryBuilder().build(configuration);
     }
 

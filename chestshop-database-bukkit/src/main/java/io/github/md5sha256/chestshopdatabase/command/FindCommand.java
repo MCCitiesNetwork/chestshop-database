@@ -4,7 +4,9 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.md5sha256.chestshopdatabase.ChestShopState;
+import io.github.md5sha256.chestshopdatabase.ExecutorState;
 import io.github.md5sha256.chestshopdatabase.ItemDiscoverer;
+import io.github.md5sha256.chestshopdatabase.database.DatabaseSession;
 import io.github.md5sha256.chestshopdatabase.database.task.FindTaskFactory;
 import io.github.md5sha256.chestshopdatabase.gui.FindState;
 import io.github.md5sha256.chestshopdatabase.gui.ShopComparators;
@@ -22,6 +24,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.function.Supplier;
 
 public record FindCommand(@NotNull ChestShopState shopState,
                           @NotNull ItemDiscoverer discoverer,

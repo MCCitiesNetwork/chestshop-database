@@ -9,25 +9,34 @@ import java.io.Closeable;
 public class DatabaseSession implements Closeable, AutoCloseable {
 
     private final SqlSession session;
-    private DatabaseMapper mapper;
+    private final Class<? extends ChestshopMapper> chestShopMapperClass;
+    private final Class<? extends PreferenceMapper> preferenceMapperClass;
 
-    public DatabaseSession(@NotNull SqlSessionFactory factory, @NotNull Class<? extends DatabaseMapper> mapperClass) {
+    public DatabaseSession(@NotNull SqlSessionFactory factory,
+                           @NotNull Class<? extends ChestshopMapper> chestShopMapperClass,
+                           @NotNull Class<? extends PreferenceMapper> preferenceMapperClass) {
         this.session = factory.openSession();
-        this.mapper = this.session.getMapper(mapperClass);
+        this.chestShopMapperClass = chestShopMapperClass;
+        this.preferenceMapperClass = preferenceMapperClass;
     }
 
+    @NotNull
     public SqlSession session() {
         return this.session;
     }
 
-    public DatabaseMapper mapper() {
-        return this.mapper;
+    @NotNull
+    public ChestshopMapper chestshopMapper() {
+        return this.session.getMapper(this.chestShopMapperClass);
     }
 
+    @NotNull
+    public PreferenceMapper preferenceMapper() {
+        return this.session.getMapper(this.preferenceMapperClass);
+    }
 
     @Override
     public void close() {
-        this.mapper = null;
         if (this.session != null) {
             session.close();
         }

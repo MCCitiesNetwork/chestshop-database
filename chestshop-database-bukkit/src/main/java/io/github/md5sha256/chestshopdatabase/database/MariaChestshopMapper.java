@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Mapper
-public interface MariaChestshopMapper extends DatabaseMapper {
+public interface MariaChestshopMapper extends ChestshopMapper {
 
     @Override
     @Delete("""

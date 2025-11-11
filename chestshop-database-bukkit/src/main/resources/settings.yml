@@ -29,3 +29,4 @@ shop-template-both:
     - '<white>Distance:</white> <yellow>%distance%</yellow>'
     - '<white>Location:</white> <gold>%x%, %y%, %z%</gold> <dark_grey>(%world%)'
 result-gui-click-command: 'compass start <x> <y> <z>'
+shop-preview-default-visibility: true

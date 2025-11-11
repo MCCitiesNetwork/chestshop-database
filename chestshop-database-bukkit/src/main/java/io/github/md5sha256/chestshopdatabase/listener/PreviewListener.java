@@ -1,7 +1,7 @@
 package io.github.md5sha256.chestshopdatabase.listener;
 
 import io.github.md5sha256.chestshopdatabase.ExecutorState;
-import io.github.md5sha256.chestshopdatabase.database.DatabaseMapper;
+import io.github.md5sha256.chestshopdatabase.database.ChestshopMapper;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseSession;
 import io.github.md5sha256.chestshopdatabase.model.HydratedShop;
 import io.github.md5sha256.chestshopdatabase.model.PartialHydratedShop;
@@ -10,7 +10,10 @@ import io.github.md5sha256.chestshopdatabase.util.ChunkPosition;
 import org.bukkit.Chunk;
 import org.bukkit.World;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.jetbrains.annotations.NotNull;
@@ -35,7 +38,7 @@ public record PreviewListener(
         int chunkZ = event.getChunk().getZ();
         CompletableFuture.supplyAsync(() -> {
                     try (DatabaseSession session = sessionSupplier.get()) {
-                        DatabaseMapper mapper = session.mapper();
+                        ChestshopMapper mapper = session.chestshopMapper();
                         return mapper.selectShopsInChunk(worldId, chunkX, chunkZ);
                     }
                 })
@@ -55,12 +58,22 @@ public record PreviewListener(
     }
 
     @EventHandler
-    public void onChunkUnload(@NotNull ChunkUnloadEvent event) {
+    public void onChunkUnload(ChunkUnloadEvent event) {
         Chunk chunk = event.getChunk();
         ChunkPosition chunkPos = new ChunkPosition(event.getWorld().getUID(),
                 chunk.getX(),
                 chunk.getZ());
         this.handler.destroyPreviews(chunkPos);
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerLogin(PlayerJoinEvent event) {
+        this.handler.loadVisibility(event.getPlayer());
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerLogout(PlayerQuitEvent event) {
+        this.handler.clearCache(event.getPlayer().getUniqueId());
     }
 
 }

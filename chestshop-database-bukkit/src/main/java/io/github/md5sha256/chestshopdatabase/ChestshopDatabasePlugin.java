@@ -8,16 +8,17 @@ import io.github.md5sha256.chestshopdatabase.command.CommandBean;
 import io.github.md5sha256.chestshopdatabase.command.FindCommand;
 import io.github.md5sha256.chestshopdatabase.command.ReloadCommand;
 import io.github.md5sha256.chestshopdatabase.command.ResyncCommand;
-import io.github.md5sha256.chestshopdatabase.database.DatabaseMapper;
+import io.github.md5sha256.chestshopdatabase.database.ChestshopMapper;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseSession;
 import io.github.md5sha256.chestshopdatabase.database.MariaChestshopMapper;
 import io.github.md5sha256.chestshopdatabase.database.MariaDatabase;
+import io.github.md5sha256.chestshopdatabase.database.MariaPreferenceMapper;
 import io.github.md5sha256.chestshopdatabase.database.task.FindTaskFactory;
 import io.github.md5sha256.chestshopdatabase.database.task.ResyncTaskFactory;
 import io.github.md5sha256.chestshopdatabase.gui.ShopResultsGUI;
 import io.github.md5sha256.chestshopdatabase.listener.ChestShopListener;
-import io.github.md5sha256.chestshopdatabase.model.ShopType;
 import io.github.md5sha256.chestshopdatabase.listener.PreviewListener;
+import io.github.md5sha256.chestshopdatabase.model.ShopType;
 import io.github.md5sha256.chestshopdatabase.preview.PreviewHandler;
 import io.github.md5sha256.chestshopdatabase.settings.ComponentSerializer;
 import io.github.md5sha256.chestshopdatabase.settings.DatabaseSettings;
@@ -88,24 +89,30 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         // Plugin startup logic
         UnsafeChestShopSign.init();
         ShopReplacements.registerDefaults(this.replacements);
-        previewHandler = new PreviewHandler(this);
         shopState = new ChestShopStateImpl(Duration.ofMinutes(5));
         discoverer = new ItemDiscoverer(50, Duration.ofMinutes(5), 50, getServer(), getLogger());
         BukkitScheduler scheduler = getServer().getScheduler();
         executorState = new ExecutorState(databaseExecutor, scheduler.getMainThreadExecutor(this));
         gui = new ShopResultsGUI(this, this.replacements, () -> this.settings);
         SqlSessionFactory sessionFactory = MariaDatabase.buildSessionFactory(this.databaseSettings);
+        Supplier<DatabaseSession> sessionSupplier =
+                () -> new DatabaseSession(sessionFactory,
+                        MariaChestshopMapper.class,
+                        MariaPreferenceMapper.class);
+        previewHandler = new PreviewHandler(this,
+                sessionSupplier,
+                this.executorState,
+                () -> this.settings);
         cacheItemCodes(sessionFactory);
         registerCommands(sessionFactory);
         scheduleTasks(sessionFactory);
         registerAdapters();
         getServer().getPluginManager()
                 .registerEvents(new ChestShopListener(shopState, discoverer, previewHandler), this);
-        getServer().getPluginManager()
-                .registerEvents(new PreviewListener(getLogger(),
-                        () -> new DatabaseSession(sessionFactory, MariaChestshopMapper.class),
-                        this.executorState,
-                        previewHandler), this);
+        getServer().getPluginManager().registerEvents(new PreviewListener(
+                getLogger(), sessionSupplier,
+                this.executorState,
+                previewHandler), this);
         getLogger().info("Plugin enabled");
     }
 
@@ -123,13 +130,14 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
 
     private void registerCommands(@NotNull SqlSessionFactory sessionFactory) {
         Supplier<DatabaseSession> sessionSupplier = () -> new DatabaseSession(sessionFactory,
-                MariaChestshopMapper.class);
+                MariaChestshopMapper.class, MariaPreferenceMapper.class);
         FindTaskFactory findTaskFactory = new FindTaskFactory(sessionSupplier, executorState);
         ResyncTaskFactory resyncTaskFactory = new ResyncTaskFactory(this.shopState,
                 this.discoverer,
                 sessionSupplier,
                 executorState,
-                this);
+                this,
+                this.previewHandler);
         var findCommand = new FindCommand(this.shopState,
                 this.discoverer,
                 findTaskFactory,
@@ -171,7 +179,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
 
     private void cacheItemCodes(@NotNull SqlSessionFactory sessionFactory) {
         try (SqlSession session = sessionFactory.openSession()) {
-            DatabaseMapper database = session.getMapper(MariaChestshopMapper.class);
+            ChestshopMapper database = session.getMapper(MariaChestshopMapper.class);
             this.shopState.cacheItemCodes(getLogger(), database);
         }
     }
@@ -181,15 +189,15 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         Logger logger = getLogger();
         long interval = 1;
         scheduler.runTaskTimer(this, () -> {
-            Consumer<DatabaseMapper> flushTask = shopState.flushTask();
+            Consumer<ChestshopMapper> flushTask = shopState.flushTask();
             if (flushTask == null) {
                 return;
             }
             logger.fine("Beginning flush task...");
             CompletableFuture.runAsync(() -> {
                 try (SqlSession session = sessionFactory.openSession(ExecutorType.BATCH, false)) {
-                    DatabaseMapper databaseMapper = session.getMapper(MariaChestshopMapper.class);
-                    flushTask.accept(databaseMapper);
+                    ChestshopMapper chestshopMapper = session.getMapper(MariaChestshopMapper.class);
+                    flushTask.accept(chestshopMapper);
                     session.commit();
                 } catch (Exception ex) {
                     logger.severe("Failed to flush shop state to database!");
@@ -206,7 +214,8 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                 SimpleItemStack.fromItemStack(DummyData.shopToIcon(ShopType.BUY)),
                 SimpleItemStack.fromItemStack(DummyData.shopToIcon(ShopType.SELL)),
                 SimpleItemStack.fromItemStack(DummyData.shopToIcon(ShopType.BOTH)),
-                "/commandName <x> <y> <z>"
+                "/commandName <x> <y> <z>",
+                true
         );
         File file = new File(getDataFolder(), "dummy-settings.yml");
         YamlConfigurationLoader loader = yamlLoader().file(file).build();

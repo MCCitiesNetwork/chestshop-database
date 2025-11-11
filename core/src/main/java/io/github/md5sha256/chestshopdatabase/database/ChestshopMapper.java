@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public interface DatabaseMapper {
+public interface ChestshopMapper {
 
     void deleteOrphanedItems();
 

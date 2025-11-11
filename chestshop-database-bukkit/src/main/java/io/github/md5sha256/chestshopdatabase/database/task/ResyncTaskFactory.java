@@ -7,11 +7,12 @@ import com.google.common.collect.Sets;
 import io.github.md5sha256.chestshopdatabase.ChestShopState;
 import io.github.md5sha256.chestshopdatabase.ExecutorState;
 import io.github.md5sha256.chestshopdatabase.ItemDiscoverer;
-import io.github.md5sha256.chestshopdatabase.database.DatabaseMapper;
+import io.github.md5sha256.chestshopdatabase.database.ChestshopMapper;
 import io.github.md5sha256.chestshopdatabase.database.DatabaseSession;
 import io.github.md5sha256.chestshopdatabase.model.ChestshopItem;
 import io.github.md5sha256.chestshopdatabase.model.HydratedShop;
 import io.github.md5sha256.chestshopdatabase.model.ShopStockUpdate;
+import io.github.md5sha256.chestshopdatabase.preview.PreviewHandler;
 import io.github.md5sha256.chestshopdatabase.task.TaskProgress;
 import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
 import io.github.md5sha256.chestshopdatabase.util.ChunkPosition;
@@ -51,18 +52,21 @@ public class ResyncTaskFactory {
     private final ExecutorState executorState;
     private final Plugin plugin;
     private final BukkitScheduler scheduler;
+    private final PreviewHandler previewHandler;
 
     public ResyncTaskFactory(@NotNull ChestShopState chestShopState,
                              @NotNull ItemDiscoverer discoverer,
                              @NotNull Supplier<DatabaseSession> sessionSupplier,
                              @NotNull ExecutorState executorState,
-                             @NotNull Plugin plugin) {
+                             @NotNull Plugin plugin,
+                             @NotNull PreviewHandler previewHandler) {
         this.chestShopState = chestShopState;
         this.discoverer = discoverer;
         this.sessionSupplier = sessionSupplier;
         this.executorState = executorState;
         this.plugin = plugin;
         this.scheduler = plugin.getServer().getScheduler();
+        this.previewHandler = previewHandler;
     }
 
     private static List<Bucket<ChunkPosition>> toBuckets(@NotNull List<BlockPosition> positions) {
@@ -174,13 +178,14 @@ public class ResyncTaskFactory {
             }
             return;
         }
-        UUID world = chunk.getWorld().getUID();
+        World world = chunk.getWorld();
+        UUID worldId = chunk.getWorld().getUID();
         Set<BlockPosition> known = new HashSet<>(blocks);
         Set<BlockPosition> knownProcessed = new HashSet<>(known.size());
         for (BlockState state : chunk.getTileEntities(block -> Tag.SIGNS.isTagged(block.getType()),
                 false)) {
             Sign sign = (Sign) state;
-            BlockPosition position = new BlockPosition(world,
+            BlockPosition position = new BlockPosition(worldId,
                     sign.getX(),
                     sign.getY(),
                     sign.getZ());
@@ -205,6 +210,7 @@ public class ResyncTaskFactory {
                 progress.incrementTotal();
                 toHydratedShop(sign, lines, container, shop -> {
                     if (shop != null) {
+                        this.previewHandler.renderPreview(world, shop);
                         return this.chestShopState.queueShopCreation(shop);
                     }
                     return CompletableFuture.<Void>completedFuture(null);
@@ -213,6 +219,7 @@ public class ResyncTaskFactory {
         }
         Set<BlockPosition> toDelete = Sets.difference(known, knownProcessed);
         for (BlockPosition blockPosition : toDelete) {
+            this.previewHandler.destroyPreview(blockPosition);
             chestShopState.queueShopDeletion(blockPosition).thenRun(progress::markCompleted);
         }
         chunk.removePluginChunkTicket(this.plugin);
@@ -277,7 +284,7 @@ public class ResyncTaskFactory {
             List<Bucket<ChunkPosition>> buckets;
             int numBlocks;
             try (DatabaseSession session = sessionSupplier.get()) {
-                DatabaseMapper mapper = session.mapper();
+                ChestshopMapper mapper = session.chestshopMapper();
                 List<BlockPosition> blocks = mapper.selectShopsPositionsByWorld(null);
                 numBlocks = blocks.size();
                 buckets = toBuckets(blocks);
