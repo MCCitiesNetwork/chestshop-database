@@ -274,7 +274,17 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
     }
 
     @NotNull
-    public CompletableFuture<Boolean> reloadMessagesAndSettings() {
+    public CompletableFuture<Boolean> reload() {
+        return reloadMessagesAndSettings().thenApply((success) -> {
+            if (success) {
+                this.previewHandler.resizeScale();
+            }
+            return success;
+        });
+    }
+
+    @NotNull
+    private CompletableFuture<Boolean> reloadMessagesAndSettings() {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
             ConfigurationNode messagesNode;

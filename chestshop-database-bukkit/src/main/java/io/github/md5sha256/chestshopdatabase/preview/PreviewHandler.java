@@ -50,6 +50,14 @@ public class PreviewHandler {
         this.settings = settings;
     }
 
+    public void resizeScale() {
+        float scale = this.settings.get().shopPreviewScale();
+        Matrix4f matrix = new Matrix4f().scale(scale);
+        for (ItemDisplay display : allDisplays) {
+            display.setTransformationMatrix(matrix);
+        }
+    }
+
     public void loadVisibility(@NotNull Player player) {
         CompletableFuture.supplyAsync(() -> {
                     try (DatabaseSession session = this.session.get()) {

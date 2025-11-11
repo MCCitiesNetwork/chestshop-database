@@ -20,7 +20,7 @@ public record ReloadCommand(@NotNull ChestshopDatabasePlugin plugin) implements 
                     Audience audience = ctx.getSource().getSender();
                     audience.sendMessage(Component.text("Reloading CSDB messages and settings",
                             NamedTextColor.GREEN));
-                    plugin.reloadMessagesAndSettings().whenComplete((success, error) -> {
+                    plugin.reload().whenComplete((success, error) -> {
                         if (error != null) {
                             error.printStackTrace();
                         }
