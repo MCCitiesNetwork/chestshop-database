@@ -1,34 +1,31 @@
 shop-template-buy:
   material: CHEST_MINECART
-  display-name: <bold><green>%owner%
+  display-name: <#00aaff><bold>%owner%
   lore:
-    - '<aqua>Buy Price: %buy-price%, Sell Price: %sell-price%'
-    - '<aqua>Unit Buy Price: %buy-price-unit%, Unit Sell Price: %sell-price-unit%'
-    - '<light_purple>Quantity: %quantity%'
-    - '<yellow>Stock: %stock%'
-    - '<yellow>Remaining Capacity: %capacity%'
-    - '<red>Distance: %distance%'
-    - '<red>Location: %x%, %y%, %z% (%world%)'
+    - '<white>Buy:</white> <red>%buy-price%</red>'
+    - '<white>Unit Buy:</white> <red>%buy-price-unit%</red>'
+    - '<white>Quantity:</white> <aqua>%quantity%</aqua> <gray>|</gray> <white>Stock:</white> <aqua>%stock%</aqua>'
+    - '<white>Remaining Capacity:</white> <light_purple>%capacity%'
+    - '<white>Distance:</white> <yellow>%distance%</yellow>'
+    - '<white>Location:</white> <gold>%x%, %y%, %z%</gold> <dark_grey>(%world%)'
 shop-template-sell:
   material: HOPPER_MINECART
-  display-name: <bold><green>%owner%
+  display-name: <#00aaff><bold>%owner%
   lore:
-    - '<aqua>Buy Price: %buy-price%, Sell Price: %sell-price%'
-    - '<aqua>Unit Buy Price: %buy-price-unit%, Unit Sell Price: %sell-price-unit%'
-    - '<light_purple>Quantity: %quantity%'
-    - '<yellow>Stock: %stock%'
-    - '<yellow>Remaining Capacity: %capacity%'
-    - '<red>Distance: %distance%'
-    - '<red>Location: %x%, %y%, %z% (%world%)'
+    - '<white>Sell:</white> <green>%sell-price%</green>'
+    - '<white>Unit Sell:</white> <green>%sell-price-unit%</green>'
+    - '<white>Quantity:</white> <aqua>%quantity%</aqua> <gray>|</gray> <white>Stock:</white> <aqua>%stock%</aqua>'
+    - '<white>Remaining Capacity:</white> <light_purple>%capacity%'
+    - '<white>Distance:</white> <yellow>%distance%</yellow>'
+    - '<white>Location:</white> <gold>%x%, %y%, %z%</gold> <dark_grey>(%world%)'
 shop-template-both:
   material: ENDER_CHEST
-  display-name: <bold><green>%owner%
+  display-name: <#00aaff><bold>%owner%
   lore:
-    - '<aqua>Buy Price: %buy-price%, Sell Price: %sell-price%'
-    - '<aqua>Unit Buy Price: %buy-price-unit%, Unit Sell Price: %sell-price-unit%'
-    - '<light_purple>Quantity: %quantity%'
-    - '<yellow>Stock: %stock%'
-    - '<yellow>Remaining Capacity: %capacity%'
-    - '<red>Distance: %distance%'
-    - '<red>Location: %x%, %y%, %z% (%world%)'
-result-gui-click-command: ''
+    - '<white>Buy:</white> <red>%buy-price%</red> <gray>|</gray> <white>Sell:</white> <green>%sell-price%</green>'
+    - '<white>Unit Buy:</white> <red>%buy-price-unit%</red> <gray>|</gray> <white>Unit Sell:</white> <green>%sell-price-unit%</green>'
+    - '<white>Quantity:</white> <aqua>%quantity%</aqua> <gray>|</gray> <white>Stock:</white> <aqua>%stock%</aqua>'
+    - '<white>Remaining Capacity:</white> <light_purple>%capacity%'
+    - '<white>Distance:</white> <yellow>%distance%</yellow>'
+    - '<white>Location:</white> <gold>%x%, %y%, %z%</gold> <dark_grey>(%world%)'
+result-gui-click-command: 'compass start <x> <y> <z>'
