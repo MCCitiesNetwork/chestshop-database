@@ -134,13 +134,15 @@ public class PreviewHandler {
                 shop.posX() + 0.5,
                 shop.posY() + 1,
                 shop.posZ() + 0.5);
+        float scale = this.settings.get().shopPreviewScale();
+        float sanitized = scale <= 0 ? 0.5f : scale;
         ItemDisplay spawned = world.spawn(location, ItemDisplay.class, display -> {
             display.setVisibleByDefault(true);
             display.setPersistent(false);
             display.setItemStack(item);
             display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.GROUND);
             display.setTransformationMatrix(new Matrix4f()
-                    .scale(this.settings.get().shopPreviewScale()));
+                    .scale(sanitized));
             display.setBillboard(Display.Billboard.CENTER);
         });
         displayEntities.computeIfAbsent(pos.chunkPosition(), x -> new HashMap<>())
