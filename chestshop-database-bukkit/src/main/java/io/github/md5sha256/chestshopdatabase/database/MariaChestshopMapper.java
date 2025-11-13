@@ -166,7 +166,11 @@ public interface MariaChestshopMapper extends ChestshopMapper {
                 visible = #{visible}
             WHERE world_uuid = CAST(#{world_uuid} AS UUID) AND pos_x = #{x} AND pos_y = #{y} AND pos_z = #{z}
             """)
-    void updateShopVisibility(@NotNull UUID world, int x, int y, int z, boolean visible);
+    void updateShopVisibility(@NotNull @Param("world_uuid") UUID world,
+                              @Param("x") int x,
+                              @Param("y") int y,
+                              @Param("z") int z,
+                              @Param("visible") boolean visible);
 
     @Override
     @Flush

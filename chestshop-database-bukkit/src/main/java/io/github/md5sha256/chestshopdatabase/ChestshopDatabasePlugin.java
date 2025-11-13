@@ -143,7 +143,9 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                 findTaskFactory,
                 this.gui,
                 this,
-                this.previewHandler);
+                this.previewHandler,
+                sessionSupplier,
+                this.executorState);
         List<CommandBean> commands = List.of(
                 findCommand,
                 new ResyncCommand(this, resyncTaskFactory),
