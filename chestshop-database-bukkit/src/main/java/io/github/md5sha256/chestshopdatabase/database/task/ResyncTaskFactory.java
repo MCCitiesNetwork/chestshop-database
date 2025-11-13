@@ -226,8 +226,10 @@ public class ResyncTaskFactory {
         for (Chunk neighbour : chunks.neighbours()) {
             if (neighbour != null) {
                 neighbour.removePluginChunkTicket(this.plugin);
+                neighbour.unload();
             }
         }
+        chunk.unload();
     }
 
 
