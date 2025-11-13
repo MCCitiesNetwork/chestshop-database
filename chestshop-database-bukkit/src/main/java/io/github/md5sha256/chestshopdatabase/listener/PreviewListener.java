@@ -39,7 +39,7 @@ public record PreviewListener(
         CompletableFuture.supplyAsync(() -> {
                     try (DatabaseSession session = sessionSupplier.get()) {
                         ChestshopMapper mapper = session.chestshopMapper();
-                        return mapper.selectShopsInChunk(worldId, chunkX, chunkZ, null);
+                        return mapper.selectShopsInChunk(worldId, chunkX, chunkZ, null, Boolean.TRUE);
                     }
                 })
                 .thenApply(shops -> shops.stream().map(PartialHydratedShop::fullyHydrate).toList())

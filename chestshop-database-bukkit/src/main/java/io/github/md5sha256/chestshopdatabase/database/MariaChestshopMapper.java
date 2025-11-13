@@ -116,6 +116,16 @@ public interface MariaChestshopMapper extends ChestshopMapper {
                                                     @Nullable @Param("visible") Boolean visible);
 
     @Override
+    @SelectProvider(value = MariaDatabaseUtil.class, method = "selectShopByPosition")
+    @Nullable
+    PartialHydratedShop selectShopByPosition(@NotNull @Param("world_uuid") UUID world,
+                                             @Param("x") int x,
+                                             @Param("y") int y,
+                                             @Param("z") int z,
+                                             @Param("visible") @Nullable Boolean visible,
+                                             @Param("hologram") @Nullable Boolean hologram);
+
+    @Override
     @Select("""
             SELECT CAST(world_uuid AS BINARY(16))      AS worldID,
                    pos_x                               AS posX,
@@ -140,7 +150,8 @@ public interface MariaChestshopMapper extends ChestshopMapper {
     List<PartialHydratedShop> selectShopsInChunk(@NotNull @Param("world_uuid") UUID world,
                                                  @Param("chunk_x") int chunkX,
                                                  @Param("chunk_z") int chunkZ,
-                                                 @Nullable Boolean visible);
+                                                 @Param("visible") @Nullable Boolean visible,
+                                                 @Param("hologram")@Nullable Boolean hologram);
 
     @Override
     @Update("""
@@ -167,6 +178,19 @@ public interface MariaChestshopMapper extends ChestshopMapper {
             WHERE world_uuid = CAST(#{world_uuid} AS UUID) AND pos_x = #{x} AND pos_y = #{y} AND pos_z = #{z}
             """)
     void updateShopVisibility(@NotNull @Param("world_uuid") UUID world,
+                              @Param("x") int x,
+                              @Param("y") int y,
+                              @Param("z") int z,
+                              @Param("visible") boolean visible);
+
+    @Override
+    @Update("""
+            UPDATE Shop
+            SET
+                hologram = #{visible}
+            WHERE world_uuid = CAST(#{world_uuid} AS UUID) AND pos_x = #{x} AND pos_y = #{y} AND pos_z = #{z}
+            """)
+    void updateHologramVisibility(@NotNull @Param("world_uuid") UUID world,
                               @Param("x") int x,
                               @Param("y") int y,
                               @Param("z") int z,

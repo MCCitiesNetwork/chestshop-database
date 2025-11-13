@@ -101,14 +101,26 @@ public interface ChestshopMapper {
                                               @Nullable Boolean visible);
 
     @NotNull
-    List<BlockPosition> selectShopsPositionsByWorld(@Nullable UUID world, @Nullable Boolean visible);
+    List<BlockPosition> selectShopsPositionsByWorld(@Nullable UUID world,
+                                                    @Nullable Boolean visible);
+
+    @Nullable
+    PartialHydratedShop selectShopByPosition(@NotNull UUID world, int x, int y, int z,
+                                              @Nullable Boolean visible,
+                                              @Nullable Boolean hologram);
 
     @NotNull
-    List<PartialHydratedShop> selectShopsInChunk(@NotNull UUID world, int chunkX, int chunkZ, @Nullable Boolean visible);
+    List<PartialHydratedShop> selectShopsInChunk(@NotNull UUID world,
+                                                 int chunkX,
+                                                 int chunkZ,
+                                                 @Nullable Boolean visible,
+                                                 @Nullable Boolean hologram);
 
     void updateShop(@NotNull UUID world, int x, int y, int z, int stock, int estimatedCapacity);
 
     void updateShopVisibility(@NotNull UUID world, int x, int y, int z, boolean visible);
+
+    void updateHologramVisibility(@NotNull UUID world, int x, int y, int z, boolean visible);
 
     default void updateShop(@NotNull ShopStockUpdate stockUpdate) {
         updateShop(stockUpdate.worldUUID(),

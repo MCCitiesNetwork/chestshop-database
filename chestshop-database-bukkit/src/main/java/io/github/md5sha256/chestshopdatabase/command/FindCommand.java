@@ -23,6 +23,7 @@ import io.papermc.paper.dialog.Dialog;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Tag;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
@@ -81,7 +82,94 @@ public record FindCommand(@NotNull ChestShopState shopState,
     private LiteralArgumentBuilder<CommandSourceStack> buildToggle() {
         return Commands.literal("toggle")
                 .then(buildTogglePreview())
-                .then(buildToggleVisibility());
+                .then(buildToggleVisibility())
+                .then(buildToggleHologram());
+    }
+
+    private LiteralArgumentBuilder<CommandSourceStack> buildToggleHologram() {
+        return Commands.literal("hologram")
+                .then(Commands.argument("visible", BoolArgumentType.bool())
+                        .requires(sourceStack -> sourceStack.getSender() instanceof Player player
+                                && player.hasPermission("csdb.hologram.toggle"))
+                        .executes(ctx -> {
+                            if (!(ctx.getSource().getSender() instanceof Player player)) {
+                                return Command.SINGLE_SUCCESS;
+                            }
+                            Block block = player.getTargetBlockExact(5);
+                            if (block == null || !Tag.SIGNS.isTagged(block.getType())) {
+                                player.sendMessage(Component.text(
+                                        "You must be looking at a shop sign!",
+                                        NamedTextColor.RED));
+                                return Command.SINGLE_SUCCESS;
+                            }
+                            Sign sign = (Sign) block.getState(false);
+                            if (!ChestShopSign.isValid(sign)) {
+                                player.sendMessage(Component.text(
+                                        "You must be looking at a shop sign!",
+                                        NamedTextColor.RED));
+                                return Command.SINGLE_SUCCESS;
+                            }
+                            if (!ChestShopSign.canAccess(player, sign)) {
+                                player.sendMessage(Component.text(
+                                        "You do not have access to this shop sign!",
+                                        NamedTextColor.RED));
+                                return Command.SINGLE_SUCCESS;
+                            }
+                            World world = sign.getWorld();
+                            UUID worldId = world.getUID();
+                            int x = sign.getX();
+                            int y = sign.getY();
+                            int z = sign.getZ();
+                            boolean visible = ctx.getArgument("visible", Boolean.class);
+                            CompletableFuture.supplyAsync(() -> {
+                                        try (DatabaseSession session = this.session.get()) {
+                                            ChestshopMapper mapper = session.chestshopMapper();
+                                            mapper.updateHologramVisibility(worldId, x, y, z, visible);
+                                            if (!visible) {
+                                                return null;
+                                            }
+                                            return mapper.selectShopByPosition(worldId,
+                                                    x,
+                                                    y,
+                                                    z,
+                                                    null,
+                                                    true);
+                                        }
+                                    }, executorState.dbExec())
+                                    .thenApplyAsync(shop -> {
+                                        if (visible && shop != null) {
+                                            previewHandler.renderPreview(world,
+                                                    shop.fullyHydrate());
+                                            return Boolean.TRUE;
+                                        } else if (!visible) {
+                                            previewHandler.destroyPreview(new BlockPosition(worldId,
+                                                    x,
+                                                    y,
+                                                    z));
+                                            return Boolean.TRUE;
+                                        } else {
+                                            return Boolean.FALSE;
+                                        }
+                                    }, executorState.mainThreadExec())
+                                    .whenComplete((success, ex) -> {
+                                        if (ex != null) {
+                                            ex.printStackTrace();
+                                            player.sendMessage(Component.text(
+                                                    "Internal error occurred!",
+                                                    NamedTextColor.RED));
+                                            return;
+                                        }
+                                        player.sendMessage(Component.text(
+                                                "Visibility toggled to " + visible,
+                                                NamedTextColor.AQUA));
+                                        if (!success) {
+                                            player.sendMessage(Component.text(
+                                                    "Failed to update hologram!",
+                                                    NamedTextColor.RED));
+                                        }
+                                    });
+                            return Command.SINGLE_SUCCESS;
+                        }));
     }
 
     private LiteralArgumentBuilder<CommandSourceStack> buildToggleVisibility() {
@@ -127,7 +215,9 @@ public record FindCommand(@NotNull ChestShopState shopState,
                                     .whenComplete((unused, ex) -> {
                                         if (ex != null) {
                                             ex.printStackTrace();
-                                            player.sendMessage(Component.text("Internal error occurred!", NamedTextColor.RED));
+                                            player.sendMessage(Component.text(
+                                                    "Internal error occurred!",
+                                                    NamedTextColor.RED));
                                             return;
                                         }
                                         player.sendMessage(Component.text(
@@ -148,7 +238,18 @@ public record FindCommand(@NotNull ChestShopState shopState,
                                 return Command.SINGLE_SUCCESS;
                             }
                             boolean visible = ctx.getArgument("visible", Boolean.class);
-                            previewHandler.setVisible(player, visible);
+                            previewHandler.setVisible(player, visible).whenComplete((unused, ex) -> {
+                                if (ex != null) {
+                                    ex.printStackTrace();
+                                    player.sendMessage(Component.text(
+                                            "Internal error occurred!",
+                                            NamedTextColor.RED));
+                                    return;
+                                }
+                                player.sendMessage(Component.text(
+                                        "Preview visibility toggled to " + visible,
+                                        NamedTextColor.AQUA));
+                            });
                             return Command.SINGLE_SUCCESS;
                         }));
     }

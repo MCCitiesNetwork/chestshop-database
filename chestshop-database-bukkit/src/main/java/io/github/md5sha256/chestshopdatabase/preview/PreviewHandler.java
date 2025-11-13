@@ -80,10 +80,10 @@ public class PreviewHandler {
         this.hideRequested.remove(player);
     }
 
-    public void setVisible(@NotNull Player player, boolean visible) {
+    public CompletableFuture<Void> setVisible(@NotNull Player player, boolean visible) {
         renderVisibility(player, visible);
         UUID playerId = player.getUniqueId();
-        CompletableFuture.runAsync(() -> {
+        return CompletableFuture.runAsync(() -> {
             try (DatabaseSession session = this.session.get()) {
                 PreferenceMapper mapper = session.preferenceMapper();
                 mapper.insertPreference(playerId, visible);

@@ -33,10 +33,12 @@ public class MariaDatabaseUtil {
     }
 
     @NotNull
-    public String selectShopsInChunk(@NotNull @Param("world_uuid") UUID world,
-                                     @Param("chunk_x") int chunkX,
-                                     @Param("chunk_z") int chunkZ,
-                                     @Nullable Boolean visible) {
+    public String selectShopByPosition(@NotNull @Param("world_uuid") UUID world,
+                                       @Param("x") int x,
+                                       @Param("y") int y,
+                                       @Param("z") int z,
+                                       @Param("visible") @Nullable Boolean visible,
+                                       @Param("hologram") @Nullable Boolean hologram) {
         return new SQL()
                 .SELECT("""
                         CAST(world_uuid AS BINARY(16))      AS worldID,
@@ -55,6 +57,41 @@ public class MariaDatabaseUtil {
                 .FROM("Shop")
                 .INNER_JOIN("Item ON Shop.item_code = Item.item_code")
                 .applyIf(visible != null, sql -> sql.WHERE("visible = #{visible}"))
+                .applyIf(hologram != null, sql -> sql.WHERE("hologram = #{hologram}"))
+                .WHERE(
+                        "Shop.world_uuid = CAST(#{world_uuid} AS UUID)",
+                        "pos_x = #{x}",
+                        "pos_y = #{y}",
+                        "pos_z = #{z}"
+                )
+                .toString();
+    }
+
+    @NotNull
+    public String selectShopsInChunk(@NotNull @Param("world_uuid") UUID world,
+                                     @Param("chunk_x") int chunkX,
+                                     @Param("chunk_z") int chunkZ,
+                                     @Param("visible") @Nullable Boolean visible,
+                                     @Param("hologram") @Nullable Boolean hologram) {
+        return new SQL()
+                .SELECT("""
+                        CAST(world_uuid AS BINARY(16))      AS worldID,
+                        pos_x                               AS posX,
+                        pos_y                               AS posY,
+                        pos_z                               AS posZ,
+                        Shop.item_code                      AS itemCode,
+                        Item.item_bytes                     AS item_bytes,
+                        owner_name                          AS ownerName,
+                        buy_price                           AS buyPrice,
+                        sell_price                          AS sellPrice,
+                        quantity,
+                        stock,
+                        estimated_capacity                  AS estimatedCapacity
+                        """)
+                .FROM("Shop")
+                .INNER_JOIN("Item ON Shop.item_code = Item.item_code")
+                .applyIf(visible != null, sql -> sql.WHERE("visible = #{visible}"))
+                .applyIf(hologram != null, sql -> sql.WHERE("hologram = #{hologram}"))
                 .WHERE(
                         "Shop.world_uuid = CAST(#{world_uuid} AS UUID)",
                         "pos_x >> 4 = #{chunk_x}",
