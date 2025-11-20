@@ -206,10 +206,13 @@ public class PreviewHandler {
 
     public void destroyPreviews(@NotNull ChunkPosition chunkPosition) {
         Map<BlockPosition, ItemDisplay> map = this.displayEntities.remove(chunkPosition);
-        if (map == null) {
+        if (map == null || map.isEmpty()) {
             return;
         }
-        map.values().forEach(ItemDisplay::remove);
+        for (ItemDisplay display : map.values()) {
+            display.remove();
+            this.allDisplays.remove(display);
+        }
     }
 
 }
