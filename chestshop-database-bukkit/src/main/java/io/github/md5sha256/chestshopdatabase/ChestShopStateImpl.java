@@ -5,22 +5,17 @@ import com.google.common.cache.CacheBuilder;
 import io.github.md5sha256.chestshopdatabase.database.ChestshopMapper;
 import io.github.md5sha256.chestshopdatabase.model.HydratedShop;
 import io.github.md5sha256.chestshopdatabase.model.ShopStockUpdate;
+import io.github.md5sha256.chestshopdatabase.settings.ItemCodeGrouping;
 import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 public class ChestShopStateImpl implements ChestShopState {
@@ -31,6 +26,7 @@ public class ChestShopStateImpl implements ChestShopState {
     private final Set<ShopStockUpdate> updatedShops = new HashSet<>();
     private final Set<BlockPosition> deletedShops = new HashSet<>();
     private final Set<String> knownItemCodes = new HashSet<>();
+    private final Map<String, String> itemCodeGroupings;
     private final AtomicReference<CompletableFuture<Void>> nextTask
             = new AtomicReference<>(new CompletableFuture<>());
 
@@ -38,8 +34,23 @@ public class ChestShopStateImpl implements ChestShopState {
         this.shopCache = CacheBuilder.newBuilder()
                 .expireAfterAccess(shopCacheDuration)
                 .build();
+        this.itemCodeGroupings = new HashMap<>();
     }
 
+
+    public void setItemCodeGroupings(@NotNull List<ItemCodeGrouping> groupings) {
+        this.itemCodeGroupings.clear();
+        for (ItemCodeGrouping grouping : groupings) {
+            for (String alias : grouping.aliases()) {
+                this.itemCodeGroupings.put(alias.toLowerCase(Locale.ENGLISH), grouping.itemCode());
+            }
+        }
+    }
+
+    @Override
+    public @NotNull String normalizeItemCode(@NotNull String itemCode) {
+        return this.itemCodeGroupings.getOrDefault(itemCode.toLowerCase(Locale.ENGLISH), itemCode);
+    }
 
     public void cacheItemCodes(@NotNull Logger logger, @NotNull ChestshopMapper database) {
         try {

@@ -20,11 +20,7 @@ import io.github.md5sha256.chestshopdatabase.listener.ChestShopListener;
 import io.github.md5sha256.chestshopdatabase.listener.PreviewListener;
 import io.github.md5sha256.chestshopdatabase.model.ShopType;
 import io.github.md5sha256.chestshopdatabase.preview.PreviewHandler;
-import io.github.md5sha256.chestshopdatabase.settings.ComponentSerializer;
-import io.github.md5sha256.chestshopdatabase.settings.DatabaseSettings;
-import io.github.md5sha256.chestshopdatabase.settings.DummyData;
-import io.github.md5sha256.chestshopdatabase.settings.MessageContainer;
-import io.github.md5sha256.chestshopdatabase.settings.Settings;
+import io.github.md5sha256.chestshopdatabase.settings.*;
 import io.github.md5sha256.chestshopdatabase.util.SimpleItemStack;
 import io.github.md5sha256.chestshopdatabase.util.UnsafeChestShopSign;
 import io.papermc.paper.command.brigadier.Commands;
@@ -70,6 +66,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
     private ExecutorState executorState;
     private ReplacementRegistry replacements = new ReplacementRegistry();
     private PreviewHandler previewHandler;
+    private ItemCodeGroupings itemCodeGroupings;
 
     @Override
     public void onLoad() {
@@ -79,6 +76,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
             this.settings = loadSettings();
             this.databaseSettings = loadDatabaseSettings();
             this.messageContainer.load(loadMessages());
+            this.itemCodeGroupings = loadItemCodeGroupings();
         } catch (IOException ex) {
             ex.printStackTrace();
             getServer().getPluginManager().disablePlugin(this);
@@ -92,6 +90,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         UnsafeChestShopSign.init();
         ShopReplacements.registerDefaults(this.replacements);
         shopState = new ChestShopStateImpl(Duration.ofMinutes(5));
+        shopState.setItemCodeGroupings(this.itemCodeGroupings.groupings());
         discoverer = new ItemDiscoverer(50, Duration.ofMinutes(5), 50, getServer(), getLogger());
         BukkitScheduler scheduler = getServer().getScheduler();
         executorState = new ExecutorState(databaseExecutor, scheduler.getMainThreadExecutor(this));
@@ -280,6 +279,15 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         return copyDefaultsYaml("messages");
     }
 
+    public ItemCodeGroupings loadItemCodeGroupings() throws IOException {
+        ConfigurationNode settingsRoot = copyDefaultsYaml("item-code-groupings");
+        ItemCodeGroupings groupings = settingsRoot.get(ItemCodeGroupings.class);
+        if (groupings == null) {
+            return new ItemCodeGroupings(null);
+        }
+        return groupings;
+    }
+
     @NotNull
     public CompletableFuture<Boolean> reload() {
         return reloadMessagesAndSettings().thenApply((success) -> {
@@ -296,9 +304,11 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
             ConfigurationNode messagesNode;
             Settings settings;
+            ItemCodeGroupings groupings;
             try {
                 messagesNode = loadMessages();
                 settings = loadSettings();
+                groupings = loadItemCodeGroupings();
             } catch (IOException ex) {
                 ex.printStackTrace();
                 future.complete(Boolean.FALSE);
@@ -307,6 +317,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
             executorState.mainThreadExec().execute(() -> {
                 this.settings = settings;
                 this.messageContainer.clear();
+                this.itemCodeGroupings = groupings;
                 try {
                     this.messageContainer.load(messagesNode);
                     future.complete(Boolean.TRUE);
@@ -315,6 +326,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                     ex.printStackTrace();
                     future.complete(Boolean.FALSE);
                 }
+                this.shopState.setItemCodeGroupings(groupings.groupings());
             });
         });
         return future;

@@ -19,4 +19,6 @@ public interface ChestShopState {
     @NotNull CompletableFuture<Void> queueShopUpdate(@NotNull ShopStockUpdate shop);
 
     @NotNull CompletableFuture<Void> queueShopDeletion(@NotNull BlockPosition position);
+
+    @NotNull String normalizeItemCode(@NotNull String itemCode);
 }

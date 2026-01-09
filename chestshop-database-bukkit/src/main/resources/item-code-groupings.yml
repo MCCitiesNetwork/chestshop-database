@@ -1,0 +1,4 @@
+#groupings:
+#  - item-code: "dirt"
+#    aliases:
+#      - "minecraft:dirt"

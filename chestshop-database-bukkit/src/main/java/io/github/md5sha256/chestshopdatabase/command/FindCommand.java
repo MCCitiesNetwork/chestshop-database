@@ -289,13 +289,14 @@ public record FindCommand(@NotNull ChestShopState shopState,
                 loc.blockY(),
                 loc.blockZ()
         );
-        this.discoverer.discoverItemStackFromCode(itemCode, item -> {
+        String normalized = this.shopState.normalizeItemCode(itemCode);
+        this.discoverer.discoverItemStackFromCode(normalized, item -> {
             if (item == null || item.isEmpty()) {
                 player.sendMessage(Component.text("Unknown item: " + itemCode, NamedTextColor.RED));
                 return;
             }
             FindState findState = new FindState(
-                    new ChestshopItem(item, itemCode),
+                    new ChestshopItem(item, normalized),
                     new ShopComparators()
                             .withDefaults()
                             .withDistance(queryPosition).build()
