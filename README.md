@@ -2,14 +2,14 @@
 
 A Paper plugin for Minecraft 1.21.8 that persists [ChestShop](https://www.spigotmc.org/resources/chestshop.51856/) data to a MariaDB database, enabling server-wide shop search, price browsing, and hologram previews.
 
-Built for [DemocracyCraft](https://democracycraft.net/).
+Built for [DemocracyCraft](https://www.democracycraft.net/) and [StateCraft](https://www.mcstatecraft.com).
 
 ## Features
 
 - **Shop tracking** — Automatically records shops as they are created, destroyed, and restocked in real time.
 - **Search GUI** — `/csdb find` Opens a paginated chest GUI; filter by shop type (buy/sell), hide empty or full shops, and sort by price, stock, quantity, or distance.
 - **Hologram previews** — Floating item displays above each shop sign, loaded per-chunk; togglable per player.
-- **WorldEdit / FAWE integration** — Shops removed by a WorldEdit operation are automatically cleaned up from the database.
+- **WorldEdit / FastAsyncWorldEdit (FAWE) integration** — Shops removed by a WorldEdit operation are automatically cleaned up from the database.
 - **WorldGuard integration** — Exposes a `%region-name%` placeholder usable in shop display templates.
 
 ## Requirements
@@ -19,7 +19,7 @@ Built for [DemocracyCraft](https://democracycraft.net/).
 | Paper 1.21.8 | Yes |
 | ChestShop | Yes |
 | MariaDB | Yes |
-| WorldEdit or FAWE | No |
+| WorldEdit or FastAsyncWorldEdit (FAWE) | No |
 | WorldGuard | No |
 
 ## Installation
