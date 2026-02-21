@@ -29,7 +29,6 @@ public class ShopReplacements {
         return Component.text(shop.ownerName());
     }
 
-
     private static Component buyPrice(@Nonnull Shop shop) {
         return Component.text(priceToString(shop.buyPrice()));
     }
