@@ -65,5 +65,4 @@ public class TaskProgress {
             runnable.run();
         }
     }
-
 }

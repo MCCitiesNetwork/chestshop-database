@@ -16,5 +16,4 @@ public record ChestshopItem(
     public ItemStack itemStack() {
         return this.itemStack.clone();
     }
-
 }
