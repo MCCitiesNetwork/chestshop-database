@@ -32,6 +32,9 @@ dependencies {
     implementation(projects.adapters.worldguard) {
         isTransitive = false
     }
+    implementation(projects.adapters.geyserFloodgate) {
+        isTransitive = false
+    }
 
     // Libraries
     implementation("org.mybatis:mybatis:3.5.19")

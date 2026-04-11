@@ -7,6 +7,7 @@ import io.github.md5sha256.chestshopdatabase.gui.ShopResultsGUI;
 import io.github.md5sha256.chestshopdatabase.model.ChestshopItem;
 import io.github.md5sha256.chestshopdatabase.model.ShopAttribute;
 import io.github.md5sha256.chestshopdatabase.model.ShopType;
+import io.github.md5sha256.chestshopdatabase.settings.MessageContainer;
 import io.github.md5sha256.chestshopdatabase.util.DialogUtil;
 import io.github.md5sha256.chestshopdatabase.util.SortDirection;
 import io.papermc.paper.datacomponent.DataComponentTypes;
@@ -28,8 +29,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.function.Predicate;
 
 public class FindDialog {
+
+    private static final String MESSAGE_FIND_QUERYING = "find.querying";
 
     @NotNull
     private static DialogBase createMainPageBase(@Nullable ChestshopItem item) {
@@ -70,10 +74,17 @@ public class FindDialog {
             @NotNull FindState findState,
             @NotNull FindTaskFactory taskFactory,
             @NotNull ShopResultsGUI resultsGUI,
-            @NotNull Plugin plugin) {
-        audience.showDialog(waitScreen());
+            @NotNull Plugin plugin,
+            @NotNull Predicate<Player> isBedrockPlayer,
+            @NotNull MessageContainer messages) {
         if (!(audience instanceof Player player)) {
+            audience.showDialog(waitScreen());
             return;
+        }
+        if (isBedrockPlayer.test(player)) {
+            player.sendMessage(messages.messageFor(MESSAGE_FIND_QUERYING));
+        } else {
+            audience.showDialog(waitScreen());
         }
         taskFactory.findTask(findState).whenComplete((res, ex) -> {
             audience.closeDialog();
@@ -98,10 +109,12 @@ public class FindDialog {
             @NotNull FindState findState,
             @NotNull FindTaskFactory taskFactory,
             @NotNull ShopResultsGUI resultsGUI,
-            @NotNull Plugin plugin
+            @NotNull Plugin plugin,
+            @NotNull Predicate<Player> isBedrockPlayer,
+            @NotNull MessageContainer messages
     ) {
         DialogAction submitAction = DialogAction.customClick((view, audience) -> {
-            submit(view, audience, findState, taskFactory, resultsGUI, plugin);
+            submit(view, audience, findState, taskFactory, resultsGUI, plugin, isBedrockPlayer, messages);
         }, ClickCallback.Options.builder().uses(1).build());
         DialogAction buyCheapAction = DialogAction.customClick((view, audience) -> {
             findState.setShopTypes(List.of(ShopType.BUY, ShopType.BOTH));
@@ -110,7 +123,7 @@ public class FindDialog {
             findState.setSortDirection(ShopAttribute.UNIT_BUY_PRICE, SortDirection.ASCENDING);
             findState.setSortDirection(ShopAttribute.DISTANCE, SortDirection.ASCENDING);
             findState.setHideEmptyShops(true);
-            submit(view, audience, findState, taskFactory, resultsGUI, plugin);
+            submit(view, audience, findState, taskFactory, resultsGUI, plugin, isBedrockPlayer, messages);
         }, ClickCallback.Options.builder().uses(1).build());
         DialogAction buyNearbyAction = DialogAction.customClick((view, audience) -> {
             findState.setShopTypes(List.of(ShopType.BUY, ShopType.BOTH));
@@ -119,7 +132,7 @@ public class FindDialog {
             findState.setSortDirection(ShopAttribute.DISTANCE, SortDirection.ASCENDING);
             findState.setSortDirection(ShopAttribute.UNIT_BUY_PRICE, SortDirection.ASCENDING);
             findState.setHideEmptyShops(true);
-            submit(view, audience, findState, taskFactory, resultsGUI, plugin);
+            submit(view, audience, findState, taskFactory, resultsGUI, plugin, isBedrockPlayer, messages);
         }, ClickCallback.Options.builder().uses(1).build());
         DialogAction sellBestPriceAction = DialogAction.customClick((view, audience) -> {
             findState.setShopTypes(List.of(ShopType.SELL, ShopType.BOTH));
@@ -130,7 +143,7 @@ public class FindDialog {
             findState.setSortDirection(ShopAttribute.REMAINING_CAPACITY, SortDirection.DESCENDING);
             findState.setSortDirection(ShopAttribute.DISTANCE, SortDirection.ASCENDING);
             findState.setHideFullShops(true);
-            submit(view, audience, findState, taskFactory, resultsGUI, plugin);
+            submit(view, audience, findState, taskFactory, resultsGUI, plugin, isBedrockPlayer, messages);
         }, ClickCallback.Options.builder().uses(1).build());
 
         ActionButton submitButton = ActionButton.builder(Component.text("Search", NamedTextColor.GREEN))
@@ -157,12 +170,14 @@ public class FindDialog {
                 ActionButton.builder(Component.text("Filters"))
                         .action(DialogUtil.openDialogAction(() -> FilterDialog.createFiltersDialog(
                                 findState,
-                                () -> createMainPageDialog(findState, taskFactory, resultsGUI, plugin))))
+                                () -> createMainPageDialog(findState, taskFactory, resultsGUI, plugin,
+                                        isBedrockPlayer, messages))))
                         .build(),
                 ActionButton.builder(Component.text("Sorting"))
                         .action(DialogUtil.openDialogAction(() -> SortDialog.createSortDialog(
                                 findState,
-                                () -> createMainPageDialog(findState, taskFactory, resultsGUI, plugin))))
+                                () -> createMainPageDialog(findState, taskFactory, resultsGUI, plugin,
+                                        isBedrockPlayer, messages))))
                         .build(),
                 submitButton
         );

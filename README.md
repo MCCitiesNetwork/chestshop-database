@@ -49,7 +49,7 @@ Built for [DemocracyCraft](https://www.democracycraft.net/) and [StateCraft](htt
 | `database-settings.yml` | MariaDB URL, username, password |
 | `settings.yml` | Shop icon templates, lore, click command, preview scale |
 | `item-code-groupings.yml` | Item code aliases mapped to canonical item codes |
-| `messages.yml` | Player-facing messages |
+| `settings.yml` (`messages:`) | Player-facing messages (MiniMessage) |
 
 ## Building
 

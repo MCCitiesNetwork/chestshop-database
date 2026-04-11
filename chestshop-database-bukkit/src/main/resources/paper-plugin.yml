@@ -21,6 +21,12 @@ dependencies:
     AsyncWorldEdit:
       join-classpath: true
       required: false
+    floodgate:
+      join-classpath: true
+      required: false
+    Geyser-Spigot:
+      join-classpath: true
+      required: false
 
 permissions:
   csdb.find:

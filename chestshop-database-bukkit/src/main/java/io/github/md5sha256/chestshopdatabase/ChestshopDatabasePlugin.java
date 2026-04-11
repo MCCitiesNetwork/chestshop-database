@@ -2,6 +2,8 @@ package io.github.md5sha256.chestshopdatabase;
 
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import io.github.md5sha256.chestshopdatabase.adapters.fawe.FAWEHandler;
+import io.github.md5sha256.chestshopdatabase.adapters.geyserfloodgate.FloodgateBedrockDetector;
+import io.github.md5sha256.chestshopdatabase.adapters.geyserfloodgate.GeyserBedrockDetector;
 import io.github.md5sha256.chestshopdatabase.adapters.worldedit.WorldEditHandler;
 import io.github.md5sha256.chestshopdatabase.adapters.worldguard.WorldGuardHandler;
 import io.github.md5sha256.chestshopdatabase.command.CommandBean;
@@ -31,6 +33,7 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.bukkit.Chunk;
 import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -51,6 +54,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
@@ -73,9 +77,10 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         try {
             initDataFolder();
             saveDummyData();
-            this.settings = loadSettings();
+            ConfigurationNode settingsRoot = copyDefaultsYaml("settings");
+            this.settings = settingsRoot.get(Settings.class);
             this.databaseSettings = loadDatabaseSettings();
-            this.messageContainer.load(loadMessages());
+            this.messageContainer.load(settingsRoot.node("messages"));
             this.itemCodeGroupings = loadItemCodeGroupings();
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -133,6 +138,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
     }
 
     private void registerCommands(@NotNull SqlSessionFactory sessionFactory) {
+        PluginManager pluginManager = getServer().getPluginManager();
         Supplier<DatabaseSession> sessionSupplier = () -> new DatabaseSession(sessionFactory,
                 MariaChestshopMapper.class, MariaPreferenceMapper.class);
         FindTaskFactory findTaskFactory = new FindTaskFactory(sessionSupplier, executorState);
@@ -142,6 +148,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                 executorState,
                 this,
                 this.previewHandler);
+        Predicate<Player> isBedrockPlayer = bedrockPlayerPredicate(pluginManager);
         var findCommand = new FindCommand(this.shopState,
                 this.discoverer,
                 findTaskFactory,
@@ -149,7 +156,9 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                 this,
                 this.previewHandler,
                 sessionSupplier,
-                this.executorState);
+                this.executorState,
+                isBedrockPlayer,
+                this.messageContainer);
         List<CommandBean> commands = List.of(
                 findCommand,
                 new ResyncCommand(this, resyncTaskFactory),
@@ -168,6 +177,19 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                             .forEach(event.registrar()::register);
                 }
         );
+    }
+
+    private @NotNull Predicate<Player> bedrockPlayerPredicate(@NotNull PluginManager pluginManager) {
+        Predicate<Player> predicate = player -> false;
+        if (pluginManager.isPluginEnabled("floodgate")) {
+            predicate = predicate.or(
+                    player -> FloodgateBedrockDetector.isBedrockPlayer(player.getUniqueId()));
+        }
+        if (pluginManager.isPluginEnabled("Geyser-Spigot")) {
+            predicate = predicate.or(
+                    player -> GeyserBedrockDetector.isBedrockPlayer(player.getUniqueId()));
+        }
+        return predicate;
     }
 
     private void registerAdapters() {
@@ -246,7 +268,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
             try (FileOutputStream fileOutputStream = new FileOutputStream(file);
                  InputStream inputStream = getResource(fileName)) {
                 if (inputStream == null) {
-                    getLogger().severe("Failed to copy default messages!");
+                    getLogger().severe("Failed to copy default resource: " + fileName);
                 } else {
                     inputStream.transferTo(fileOutputStream);
                 }
@@ -265,18 +287,9 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                 .nodeStyle(NodeStyle.BLOCK);
     }
 
-    private Settings loadSettings() throws IOException {
-        ConfigurationNode settingsRoot = copyDefaultsYaml("settings");
-        return settingsRoot.get(Settings.class);
-    }
-
     private DatabaseSettings loadDatabaseSettings() throws IOException {
         ConfigurationNode settingsRoot = copyDefaultsYaml("database-settings");
         return settingsRoot.get(DatabaseSettings.class);
-    }
-
-    public ConfigurationNode loadMessages() throws IOException {
-        return copyDefaultsYaml("messages");
     }
 
     public ItemCodeGroupings loadItemCodeGroupings() throws IOException {
@@ -302,12 +315,13 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
     private CompletableFuture<Boolean> reloadMessagesAndSettings() {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
         getServer().getScheduler().runTaskAsynchronously(this, () -> {
-            ConfigurationNode messagesNode;
             Settings settings;
+            ConfigurationNode messagesNode;
             ItemCodeGroupings groupings;
             try {
-                messagesNode = loadMessages();
-                settings = loadSettings();
+                ConfigurationNode settingsRoot = copyDefaultsYaml("settings");
+                settings = settingsRoot.get(Settings.class);
+                messagesNode = settingsRoot.node("messages");
                 groupings = loadItemCodeGroupings();
             } catch (IOException ex) {
                 ex.printStackTrace();

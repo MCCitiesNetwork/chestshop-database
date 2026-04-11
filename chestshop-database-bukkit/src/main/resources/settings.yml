@@ -31,3 +31,6 @@ shop-template-both:
 shop-icon-click-command: 'compass start <x> <y> <z>'
 shop-preview-default-visibility: true
 shop-preview-scale: 0.5
+messages:
+  find:
+    querying: "<red>Querying..."

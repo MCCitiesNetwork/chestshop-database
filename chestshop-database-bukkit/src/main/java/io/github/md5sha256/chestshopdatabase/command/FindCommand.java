@@ -16,6 +16,7 @@ import io.github.md5sha256.chestshopdatabase.gui.ShopResultsGUI;
 import io.github.md5sha256.chestshopdatabase.gui.dialog.FindDialog;
 import io.github.md5sha256.chestshopdatabase.model.ChestshopItem;
 import io.github.md5sha256.chestshopdatabase.preview.PreviewHandler;
+import io.github.md5sha256.chestshopdatabase.settings.MessageContainer;
 import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -33,6 +34,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public record FindCommand(@NotNull ChestShopState shopState,
@@ -42,7 +44,9 @@ public record FindCommand(@NotNull ChestShopState shopState,
                           @NotNull Plugin plugin,
                           @NotNull PreviewHandler previewHandler,
                           @NotNull Supplier<DatabaseSession> session,
-                          @NotNull ExecutorState executorState) implements CommandBean.Single {
+                          @NotNull ExecutorState executorState,
+                          @NotNull Predicate<Player> isBedrockPlayer,
+                          @NotNull MessageContainer messages) implements CommandBean.Single {
 
 
     @Override
@@ -276,7 +280,8 @@ public record FindCommand(@NotNull ChestShopState shopState,
             );
             findState.setWorld(queryPosition.world());
             findState.setQueryPosition(queryPosition);
-            Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui, plugin);
+            Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui, plugin,
+                    isBedrockPlayer, messages);
             player.showDialog(dialog);
         });
     }
@@ -303,7 +308,8 @@ public record FindCommand(@NotNull ChestShopState shopState,
             );
             findState.setWorld(queryPosition.world());
             findState.setQueryPosition(queryPosition);
-            Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui, plugin);
+            Dialog dialog = FindDialog.createMainPageDialog(findState, taskFactory, gui, plugin,
+                    isBedrockPlayer, messages);
             player.showDialog(dialog);
         });
     }

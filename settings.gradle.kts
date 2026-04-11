@@ -4,6 +4,7 @@ rootProject.name = "chestshop-database"
 include(":adapters:worldedit")
 include(":adapters:fawe")
 include(":adapters:worldguard")
+include(":adapters:geyser-floodgate")
 
 // Core
 include(":core")
