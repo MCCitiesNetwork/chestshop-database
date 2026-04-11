@@ -77,10 +77,9 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         try {
             initDataFolder();
             saveDummyData();
-            ConfigurationNode settingsRoot = copyDefaultsYaml("settings");
-            this.settings = settingsRoot.get(Settings.class);
+            this.settings = loadSettings();
             this.databaseSettings = loadDatabaseSettings();
-            this.messageContainer.load(settingsRoot.node("messages"));
+            this.messageContainer.load(loadMessages());
             this.itemCodeGroupings = loadItemCodeGroupings();
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -287,6 +286,15 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                 .nodeStyle(NodeStyle.BLOCK);
     }
 
+    private Settings loadSettings() throws IOException {
+        ConfigurationNode settingsRoot = copyDefaultsYaml("settings");
+        return settingsRoot.get(Settings.class);
+    }
+
+    private ConfigurationNode loadMessages() throws IOException {
+        return copyDefaultsYaml("messages");
+    }
+
     private DatabaseSettings loadDatabaseSettings() throws IOException {
         ConfigurationNode settingsRoot = copyDefaultsYaml("database-settings");
         return settingsRoot.get(DatabaseSettings.class);
@@ -321,7 +329,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
             try {
                 ConfigurationNode settingsRoot = copyDefaultsYaml("settings");
                 settings = settingsRoot.get(Settings.class);
-                messagesNode = settingsRoot.node("messages");
+                messagesNode = loadMessages();
                 groupings = loadItemCodeGroupings();
             } catch (IOException ex) {
                 ex.printStackTrace();
