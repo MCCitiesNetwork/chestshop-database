@@ -27,6 +27,10 @@ dependencies:
     Geyser-Spigot:
       join-classpath: true
       required: false
+    PlaceholderAPI:
+      join-classpath: true
+      required: false
+      load: BEFORE
 
 permissions:
   csdb.find:

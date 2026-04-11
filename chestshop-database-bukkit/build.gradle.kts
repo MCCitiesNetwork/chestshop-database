@@ -15,11 +15,16 @@ repositories {
         name = "minebench-repo"
         url = uri("https://repo.minebench.de/")
     }
+    maven {
+        name = "placeholderapi"
+        url = uri("https://repo.extendedclip.com/releases/")
+    }
 }
 
 dependencies {
     compileOnly(libs.paper)
     compileOnly("com.acrobot.chestshop:chestshop:3.12.2")
+    compileOnly(libs.placeholderApi)
 
     // Internal projects
     implementation(projects.core)

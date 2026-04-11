@@ -123,7 +123,8 @@ public class FindDialog {
             }
             Component title = messages.messageResolving("find.results-title",
                     Placeholder.unparsed("item_code", findState.item().itemCode()));
-            ChestGui chestGui = resultsGUI.createGui(title, res, findState.item().itemStack(), findState.queryPosition());
+            ChestGui chestGui = resultsGUI.createGui(title, res, findState.item().itemStack(),
+                    findState.queryPosition(), null, player);
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> chestGui.show(player), 1);
         });
     }

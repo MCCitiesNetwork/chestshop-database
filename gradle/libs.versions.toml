@@ -8,6 +8,7 @@ worldguard = "7.0.14"
 fawe = "2.14.0"
 geyserApi = "2.9.0-SNAPSHOT"
 floodgateApi = "2.2.4-SNAPSHOT"
+placeholderApi = "2.11.6"
 
 [libraries]
 # Platform
@@ -19,3 +20,4 @@ fastasyncworldeditCore = { group = "com.fastasyncworldedit", name = "FastAsyncWo
 worldguardBukkit = { group = "com.sk89q.worldguard", name = "worldguard-bukkit", version.ref = "worldguard" }
 geyserApi = { group = "org.geysermc.geyser", name = "api", version.ref = "geyserApi" }
 floodgateApi = { group = "org.geysermc.floodgate", name = "api", version.ref = "floodgateApi" }
+placeholderApi = { group = "me.clip", name = "placeholderapi", version.ref = "placeholderApi" }

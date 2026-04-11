@@ -15,6 +15,7 @@ import io.github.md5sha256.chestshopdatabase.model.ShopType;
 import io.github.md5sha256.chestshopdatabase.settings.MessageContainer;
 import io.github.md5sha256.chestshopdatabase.settings.Settings;
 import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
+import io.github.md5sha256.chestshopdatabase.util.PlaceholderApiUtil;
 import io.github.md5sha256.chestshopdatabase.util.SimpleItemStack;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -62,17 +63,20 @@ public record ShopResultsGUI(@NotNull Plugin plugin,
 
 
     private ItemStack shopToIcon(@NotNull Shop shop,
-                                 @Nullable BlockPosition queryPosition) {
+                                 @Nullable BlockPosition queryPosition,
+                                 @Nullable Player viewer) {
         ReplacementRegistry forked = this.replacements.fork()
                 .stringReplacement("%distance%", s -> distanceString(s, queryPosition));
         ItemStack itemStack = template(shop.shopType());
         itemStack.editMeta(meta -> {
-                    Component displayName = stripItalics(forked.applyReplacements(shop,
-                            itemStack.effectiveName()));
+                    Component displayName = PlaceholderApiUtil.withViewerPlaceholders(viewer,
+                            stripItalics(forked.applyReplacements(shop,
+                                    itemStack.effectiveName())));
                     List<Component> lore = Objects.requireNonNullElse(meta.lore(), Collections.<Component>emptyList())
                             .stream()
                             .map(component -> forked.applyReplacements(shop, component))
                             .map(ShopResultsGUI::stripItalics)
+                            .map(line -> PlaceholderApiUtil.withViewerPlaceholders(viewer, line))
                             .toList();
                     meta.displayName(displayName);
                     meta.lore(lore);
@@ -89,7 +93,7 @@ public record ShopResultsGUI(@NotNull Plugin plugin,
                               @NotNull List<Shop> shops,
                               @NotNull ItemStack shopItem,
                               @Nullable BlockPosition queryPosition) {
-        return createGui(title, shops, shopItem, queryPosition, null);
+        return createGui(title, shops, shopItem, queryPosition, null, null);
     }
 
     @NotNull
@@ -101,15 +105,16 @@ public record ShopResultsGUI(@NotNull Plugin plugin,
     }
 
     private GuiItem shopToGuiItem(@NotNull Shop shop,
-                                  @Nullable BlockPosition queryPosition) {
+                                  @Nullable BlockPosition queryPosition,
+                                  @Nullable Player viewer) {
         String clickCommand = settings().get().clickCommand();
         if (clickCommand == null || clickCommand.isEmpty()) {
-            return new GuiItem(shopToIcon(shop, queryPosition), this.plugin);
+            return new GuiItem(shopToIcon(shop, queryPosition, viewer), this.plugin);
         }
 
         String injected = injectPlaceholders(clickCommand, shop);
 
-        return new GuiItem(shopToIcon(shop, queryPosition), (event) -> {
+        return new GuiItem(shopToIcon(shop, queryPosition, viewer), (event) -> {
             event.setCancelled(true);
             event.getView().close();
             HumanEntity clicked = event.getWhoClicked();
@@ -124,10 +129,19 @@ public record ShopResultsGUI(@NotNull Plugin plugin,
                               @NotNull ItemStack shopItem,
                               @Nullable BlockPosition queryPosition,
                               @Nullable Gui parent) {
+        return createGui(title, shops, shopItem, queryPosition, parent, null);
+    }
+
+    public ChestGui createGui(@NotNull Component title,
+                              @NotNull List<Shop> shops,
+                              @NotNull ItemStack shopItem,
+                              @Nullable BlockPosition queryPosition,
+                              @Nullable Gui parent,
+                              @Nullable Player viewer) {
         ChestGui gui = new ChestGui(6, ComponentHolder.of(title), this.plugin);
         List<GuiItem> items = new ArrayList<>();
         for (Shop shop : shops) {
-            GuiItem item = shopToGuiItem(shop, queryPosition);
+            GuiItem item = shopToGuiItem(shop, queryPosition, viewer);
             items.add(item);
         }
         PaginatedPane mainPane = new PaginatedPane(9, 5);
