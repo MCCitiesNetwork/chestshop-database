@@ -21,8 +21,7 @@ import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.dialog.Dialog;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Tag;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -64,9 +63,7 @@ public record FindCommand(@NotNull ChestShopState shopState,
                     }
                     ItemStack inMainHand = player.getInventory().getItemInMainHand().asOne();
                     if (inMainHand.isEmpty()) {
-                        player.sendMessage(Component.text(
-                                "You must hold an item in your hand or specify an item code!",
-                                NamedTextColor.RED));
+                        player.sendMessage(messages.messageFor("find.command.need-item"));
                         return Command.SINGLE_SUCCESS;
                     }
                     processCommandWithItem(player, inMainHand);
@@ -101,22 +98,16 @@ public record FindCommand(@NotNull ChestShopState shopState,
                             }
                             Block block = player.getTargetBlockExact(5);
                             if (block == null || !Tag.SIGNS.isTagged(block.getType())) {
-                                player.sendMessage(Component.text(
-                                        "You must be looking at a shop sign!",
-                                        NamedTextColor.RED));
+                                player.sendMessage(messages.messageFor("find.command.sign-target"));
                                 return Command.SINGLE_SUCCESS;
                             }
                             Sign sign = (Sign) block.getState(false);
                             if (!ChestShopSign.isValid(sign)) {
-                                player.sendMessage(Component.text(
-                                        "You must be looking at a shop sign!",
-                                        NamedTextColor.RED));
+                                player.sendMessage(messages.messageFor("find.command.sign-target"));
                                 return Command.SINGLE_SUCCESS;
                             }
                             if (!ChestShopSign.canAccess(player, sign)) {
-                                player.sendMessage(Component.text(
-                                        "You do not have access to this shop sign!",
-                                        NamedTextColor.RED));
+                                player.sendMessage(messages.messageFor("find.command.sign-no-access"));
                                 return Command.SINGLE_SUCCESS;
                             }
                             World world = sign.getWorld();
@@ -158,18 +149,14 @@ public record FindCommand(@NotNull ChestShopState shopState,
                                     .whenComplete((success, ex) -> {
                                         if (ex != null) {
                                             ex.printStackTrace();
-                                            player.sendMessage(Component.text(
-                                                    "Internal error occurred!",
-                                                    NamedTextColor.RED));
+                                            player.sendMessage(messages.messageFor("find.command.internal-error"));
                                             return;
                                         }
-                                        player.sendMessage(Component.text(
-                                                "Visibility toggled to " + visible,
-                                                NamedTextColor.AQUA));
+                                        player.sendMessage(messages.messageResolving("find.command.visibility-toggled",
+                                                Placeholder.unparsed("value", String.valueOf(visible))));
                                         if (!success) {
-                                            player.sendMessage(Component.text(
-                                                    "Failed to update hologram!",
-                                                    NamedTextColor.RED));
+                                            player.sendMessage(messages.messageFor(
+                                                    "find.command.visibility-toggled-failed"));
                                         }
                                     });
                             return Command.SINGLE_SUCCESS;
@@ -187,22 +174,16 @@ public record FindCommand(@NotNull ChestShopState shopState,
                             }
                             Block block = player.getTargetBlockExact(5);
                             if (block == null || !Tag.SIGNS.isTagged(block.getType())) {
-                                player.sendMessage(Component.text(
-                                        "You must be looking at a shop sign!",
-                                        NamedTextColor.RED));
+                                player.sendMessage(messages.messageFor("find.command.sign-target"));
                                 return Command.SINGLE_SUCCESS;
                             }
                             Sign sign = (Sign) block.getState(false);
                             if (!ChestShopSign.isValid(sign)) {
-                                player.sendMessage(Component.text(
-                                        "You must be looking at a shop sign!",
-                                        NamedTextColor.RED));
+                                player.sendMessage(messages.messageFor("find.command.sign-target"));
                                 return Command.SINGLE_SUCCESS;
                             }
                             if (!ChestShopSign.canAccess(player, sign)) {
-                                player.sendMessage(Component.text(
-                                        "You do not have access to this shop sign!",
-                                        NamedTextColor.RED));
+                                player.sendMessage(messages.messageFor("find.command.sign-no-access"));
                                 return Command.SINGLE_SUCCESS;
                             }
                             UUID world = sign.getWorld().getUID();
@@ -219,14 +200,11 @@ public record FindCommand(@NotNull ChestShopState shopState,
                                     .whenComplete((unused, ex) -> {
                                         if (ex != null) {
                                             ex.printStackTrace();
-                                            player.sendMessage(Component.text(
-                                                    "Internal error occurred!",
-                                                    NamedTextColor.RED));
+                                            player.sendMessage(messages.messageFor("find.command.internal-error"));
                                             return;
                                         }
-                                        player.sendMessage(Component.text(
-                                                "Visibility toggled to " + visible,
-                                                NamedTextColor.AQUA));
+                                        player.sendMessage(messages.messageResolving("find.command.visibility-toggled",
+                                                Placeholder.unparsed("value", String.valueOf(visible))));
                                     });
                             return Command.SINGLE_SUCCESS;
                         }));
@@ -245,14 +223,11 @@ public record FindCommand(@NotNull ChestShopState shopState,
                             previewHandler.setVisible(player, visible).whenComplete((unused, ex) -> {
                                 if (ex != null) {
                                     ex.printStackTrace();
-                                    player.sendMessage(Component.text(
-                                            "Internal error occurred!",
-                                            NamedTextColor.RED));
+                                    player.sendMessage(messages.messageFor("find.command.internal-error"));
                                     return;
                                 }
-                                player.sendMessage(Component.text(
-                                        "Preview visibility toggled to " + visible,
-                                        NamedTextColor.AQUA));
+                                player.sendMessage(messages.messageResolving("find.command.preview-toggled",
+                                        Placeholder.unparsed("value", String.valueOf(visible))));
                             });
                             return Command.SINGLE_SUCCESS;
                         }));
@@ -267,8 +242,8 @@ public record FindCommand(@NotNull ChestShopState shopState,
         );
         this.discoverer.discoverCodeFromItemStack(itemStack, code -> {
             if (code == null || code.isEmpty()) {
-                player.sendMessage(Component.text("Unknown item: ", NamedTextColor.RED)
-                        .append(itemStack.effectiveName()));
+                player.sendMessage(messages.messageResolving("find.unknown-item-display",
+                        Placeholder.component("item", itemStack.effectiveName())));
                 return;
             }
             FindState findState = new FindState(
@@ -297,7 +272,8 @@ public record FindCommand(@NotNull ChestShopState shopState,
         String normalized = this.shopState.normalizeItemCode(itemCode);
         this.discoverer.discoverItemStackFromCode(normalized, item -> {
             if (item == null || item.isEmpty()) {
-                player.sendMessage(Component.text("Unknown item: " + itemCode, NamedTextColor.RED));
+                player.sendMessage(messages.messageResolving("find.unknown-item-code",
+                        Placeholder.unparsed("code", itemCode)));
                 return;
             }
             FindState findState = new FindState(

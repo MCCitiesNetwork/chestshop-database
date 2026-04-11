@@ -12,11 +12,11 @@ import com.github.stefvanschie.inventoryframework.pane.util.Slot;
 import io.github.md5sha256.chestshopdatabase.ReplacementRegistry;
 import io.github.md5sha256.chestshopdatabase.model.Shop;
 import io.github.md5sha256.chestshopdatabase.model.ShopType;
+import io.github.md5sha256.chestshopdatabase.settings.MessageContainer;
 import io.github.md5sha256.chestshopdatabase.settings.Settings;
 import io.github.md5sha256.chestshopdatabase.util.BlockPosition;
 import io.github.md5sha256.chestshopdatabase.util.SimpleItemStack;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.entity.HumanEntity;
@@ -35,7 +35,8 @@ import java.util.function.Supplier;
 
 public record ShopResultsGUI(@NotNull Plugin plugin,
                              @NotNull ReplacementRegistry replacements,
-                             @NotNull Supplier<Settings> settings) {
+                             @NotNull Supplier<Settings> settings,
+                             @NotNull Supplier<MessageContainer> messages) {
 
 
     private static String distanceString(Shop shop, @Nullable BlockPosition queryPosition) {
@@ -164,7 +165,7 @@ public record ShopResultsGUI(@NotNull Plugin plugin,
         StaticPane footerPane = new StaticPane(0, 5, 9, 1, Pane.Priority.LOWEST);
         ItemStack backItem = ItemStack.of(Material.ARROW);
         backItem.editMeta(meta -> {
-            Component displayName = Component.text("Back", NamedTextColor.RED)
+            Component displayName = messages.get().messageFor("gui.results.back")
                     .decoration(TextDecoration.ITALIC, false);
             meta.displayName(displayName);
         });
@@ -184,9 +185,9 @@ public record ShopResultsGUI(@NotNull Plugin plugin,
                 Pane.Priority.HIGH,
                 mainPane,
                 this.plugin);
-        Component nextPageComp = Component.text("Next Page")
+        Component nextPageComp = messages.get().messageFor("gui.results.next-page")
                 .decoration(TextDecoration.ITALIC, false);
-        Component prevPageComp = Component.text("Prev Page")
+        Component prevPageComp = messages.get().messageFor("gui.results.prev-page")
                 .decoration(TextDecoration.ITALIC, false);
         ItemStack nextButton = ItemStack.of(Material.PAPER);
         nextButton.editMeta(meta -> meta.displayName(nextPageComp));

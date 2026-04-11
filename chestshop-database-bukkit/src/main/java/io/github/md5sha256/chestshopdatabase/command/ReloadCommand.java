@@ -6,8 +6,6 @@ import io.github.md5sha256.chestshopdatabase.ChestshopDatabasePlugin;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.NotNull;
 
 public record ReloadCommand(@NotNull ChestshopDatabasePlugin plugin) implements CommandBean.Single {
@@ -18,19 +16,15 @@ public record ReloadCommand(@NotNull ChestshopDatabasePlugin plugin) implements 
                 .requires(source -> source.getSender().hasPermission("csdb.reload"))
                 .executes(ctx -> {
                     Audience audience = ctx.getSource().getSender();
-                    audience.sendMessage(Component.text("Reloading CSDB messages and settings",
-                            NamedTextColor.GREEN));
+                    audience.sendMessage(plugin.messages().messageFor("command.reload.start"));
                     plugin.reload().whenComplete((success, error) -> {
                         if (error != null) {
                             error.printStackTrace();
                         }
                         if (!success || error != null) {
-                            audience.sendMessage(Component.text(
-                                    "Reload unsuccessful, check console for errors",
-                                    NamedTextColor.RED));
+                            audience.sendMessage(plugin.messages().messageFor("command.reload.failure"));
                         } else {
-                            audience.sendMessage(Component.text("Reload successful",
-                                    NamedTextColor.GREEN));
+                            audience.sendMessage(plugin.messages().messageFor("command.reload.success"));
                         }
                     });
                     return Command.SINGLE_SUCCESS;

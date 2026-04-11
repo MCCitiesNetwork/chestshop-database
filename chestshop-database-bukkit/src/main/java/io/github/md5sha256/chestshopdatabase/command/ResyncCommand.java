@@ -8,8 +8,9 @@ import io.github.md5sha256.chestshopdatabase.task.TaskProgress;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.util.Tick;
+import io.github.md5sha256.chestshopdatabase.settings.MessageContainer;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -20,7 +21,8 @@ import java.time.Duration;
 
 public record ResyncCommand(
         @NotNull Plugin plugin,
-        @NotNull ResyncTaskFactory taskFactory
+        @NotNull ResyncTaskFactory taskFactory,
+        @NotNull MessageContainer messages
 ) implements CommandBean.Single {
 
 
@@ -32,29 +34,31 @@ public record ResyncCommand(
                         .executes(ctx -> {
                             CommandSender sender = ctx.getSource().getSender();
                             BukkitScheduler scheduler = plugin.getServer().getScheduler();
-                            sender.sendMessage(Component.text("Resync queued",
-                                    NamedTextColor.GREEN));
+                            sender.sendMessage(messages.messageFor("resync.queued"));
                             int chunksPerInterval = ctx.getArgument("chunksPerTick", Integer.class);
                             taskFactory.triggerResync(chunksPerInterval, 1).thenAccept(progress -> {
                                 int ticks = Tick.tick().fromDuration(Duration.ofSeconds(30));
                                 BukkitTask bukkitTask = scheduler.runTaskTimer(plugin, () -> {
-                                    sender.sendMessage(Component.text(formatProgress(progress),
-                                            NamedTextColor.AQUA));
+                                    sender.sendMessage(formatProgress(progress));
                                 }, ticks, ticks);
                                 progress.chainOnComplete(() -> {
                                     bukkitTask.cancel();
-                                    sender.sendMessage(String.format("Resync complete! (%d)", progress.total()));
+                                    sender.sendMessage(messages.messageResolving("resync.complete",
+                                            Placeholder.unparsed("total", String.valueOf(progress.total()))));
                                 });
                             });
                             return Command.SINGLE_SUCCESS;
                         }));
     }
 
-    private String formatProgress(@NotNull TaskProgress progress) {
+    private Component formatProgress(@NotNull TaskProgress progress) {
         int done = progress.completed();
         int total = progress.total();
-        double percent = 100D * done / total;
-        return String.format("Resync Progress: %d/%d (%.2f%%)", done, total, percent);
+        double percent = total == 0 ? 0 : 100D * done / total;
+        return messages.messageResolving("resync.progress",
+                Placeholder.unparsed("done", String.valueOf(done)),
+                Placeholder.unparsed("total", String.valueOf(total)),
+                Placeholder.unparsed("percent", String.format("%.2f", percent)));
     }
 
 }

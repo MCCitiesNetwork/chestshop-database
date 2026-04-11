@@ -2,6 +2,7 @@ package io.github.md5sha256.chestshopdatabase.gui.dialog;
 
 import io.github.md5sha256.chestshopdatabase.gui.FindState;
 import io.github.md5sha256.chestshopdatabase.model.ShopType;
+import io.github.md5sha256.chestshopdatabase.settings.MessageContainer;
 import io.github.md5sha256.chestshopdatabase.util.DialogUtil;
 import io.papermc.paper.dialog.Dialog;
 import io.papermc.paper.registry.data.dialog.ActionButton;
@@ -12,7 +13,6 @@ import io.papermc.paper.registry.data.dialog.input.DialogInput;
 import io.papermc.paper.registry.data.dialog.input.SingleOptionDialogInput;
 import io.papermc.paper.registry.data.dialog.type.DialogType;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -25,32 +25,34 @@ import java.util.stream.Stream;
 public class FilterDialog {
 
     @NotNull
-    private static DialogBase createShopFiltersBase(@NotNull Set<ShopType> includedTypes) {
+    private static DialogBase createShopFiltersBase(@NotNull Set<ShopType> includedTypes,
+                                                    @NotNull MessageContainer messages) {
         var options = List.of(SingleOptionDialogInput.OptionEntry.create("enabled",
-                        Component.text("On", NamedTextColor.GREEN),
+                        messages.messageFor("dialog.option.on"),
                         true),
                 SingleOptionDialogInput.OptionEntry.create("disabled",
-                        Component.text("Off", NamedTextColor.RED),
+                        messages.messageFor("dialog.option.off"),
                         false));
 
         Stream<SingleOptionDialogInput> typeInputs = Arrays.stream(ShopType.values())
                 .map(type -> DialogInput.singleOption(type.name(),
-                                Component.text(type.displayName()),
+                                messages.messageFor(
+                                        "find.filter.shop-type." + type.name().toLowerCase()),
                                 options)
                         .build());
 
         Stream<SingleOptionDialogInput> emptyFullInputs = Stream.of(
                 DialogInput.singleOption(
                         "show_empty",
-                        Component.text("Empty Shops"),
+                        messages.messageFor("find.filter.empty-shops"),
                         options).build(),
                 DialogInput.singleOption(
                         "show_full",
-                        Component.text("Full Shops"),
+                        messages.messageFor("find.filter.full-shops"),
                         options).build()
         );
 
-        return DialogBase.builder(Component.text("Select Shop Types"))
+        return DialogBase.builder(messages.messageFor("find.filter.title"))
                 .canCloseWithEscape(true)
                 .inputs(Stream.concat(typeInputs, emptyFullInputs).toList())
                 .build();
@@ -58,20 +60,21 @@ public class FilterDialog {
 
     @NotNull
     public static Dialog createFiltersDialog(@NotNull FindState state,
-                                             @NotNull Supplier<Dialog> prevDialog) {
+                                             @NotNull Supplier<Dialog> prevDialog,
+                                             @NotNull MessageContainer messages) {
         Set<ShopType> includedTypes = state.shopTypes();
-        ActionButton saveButton = ActionButton.builder(Component.text("Save"))
-                .tooltip(Component.text("Save selection and return to previous menu"))
+        ActionButton saveButton = ActionButton.builder(messages.messageFor("dialog.common.save"))
+                .tooltip(messages.messageFor("dialog.common.tooltip.save-return"))
                 .action(DialogAction.customClick(applyFilters(state, prevDialog),
                         DialogUtil.DEFAULT_CALLBACK_OPTIONS))
                 .build();
-        ActionButton backButton = ActionButton.builder(Component.text("Back"))
-                .tooltip(Component.text("Return to previous menu"))
+        ActionButton backButton = ActionButton.builder(messages.messageFor("dialog.common.back"))
+                .tooltip(messages.messageFor("dialog.common.tooltip.back"))
                 .action(DialogUtil.openDialogAction(prevDialog))
                 .build();
         return Dialog.create(factory ->
                 factory.empty()
-                        .base(createShopFiltersBase(includedTypes))
+                        .base(createShopFiltersBase(includedTypes, messages))
                         .type(DialogType.confirmation(saveButton, backButton))
         );
     }

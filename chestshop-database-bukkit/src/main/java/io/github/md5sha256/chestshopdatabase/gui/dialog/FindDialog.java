@@ -21,7 +21,7 @@ import io.papermc.paper.registry.data.dialog.type.DialogType;
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickCallback;
-import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
@@ -33,18 +33,20 @@ import java.util.function.Predicate;
 
 public class FindDialog {
 
-    private static final String MESSAGE_FIND_QUERYING = "find.querying";
-
     @NotNull
-    private static DialogBase createMainPageBase(@Nullable ChestshopItem item) {
+    private static DialogBase createMainPageBase(@Nullable ChestshopItem item,
+                                                 @NotNull MessageContainer messages) {
         if (item == null) {
-            return DialogBase.builder(Component.text("Find ChestShops"))
+            return DialogBase.builder(messages.messageFor("find.dialog.title"))
                     .canCloseWithEscape(true).build();
         }
         ItemStack itemStack = item.itemStack();
         Component name = itemStack.getDataOrDefault(DataComponentTypes.CUSTOM_NAME,
                 itemStack.effectiveName());
-        var builder = DialogBase.builder(Component.text("Find ChestShops for ").append(name))
+
+        var builder = DialogBase.builder(
+                        messages.messageResolving("find.dialog.title-with-item",
+                                Placeholder.component("item", name)))
                 .canCloseWithEscape(true);
 
         var nameBody = DialogBody.plainMessage(name);
@@ -52,19 +54,19 @@ public class FindDialog {
         return builder.body(List.of(itemBody, nameBody)).build();
     }
 
-    private static Dialog waitScreen() {
+    private static Dialog waitScreen(@NotNull MessageContainer messages) {
         return Dialog.create(factory -> factory
                 .empty()
-                .base(waitScreenBase())
+                .base(waitScreenBase(messages))
                 .type(DialogType.notice())
         );
     }
 
-    private static DialogBase waitScreenBase() {
-        return DialogBase.builder(Component.text("Chest Shop Query"))
+    private static DialogBase waitScreenBase(@NotNull MessageContainer messages) {
+        return DialogBase.builder(messages.messageFor("find.dialog.query-title"))
                 .afterAction(DialogBase.DialogAfterAction.CLOSE)
                 .canCloseWithEscape(true)
-                .body(List.of(DialogBody.plainMessage(Component.text("Querying..."))))
+                .body(List.of(DialogBody.plainMessage(messages.messageFor("find.dialog.query-body"))))
                 .build();
     }
 
@@ -78,27 +80,27 @@ public class FindDialog {
             @NotNull Predicate<Player> isBedrockPlayer,
             @NotNull MessageContainer messages) {
         if (!(audience instanceof Player player)) {
-            audience.showDialog(waitScreen());
+            audience.showDialog(waitScreen(messages));
             return;
         }
         if (isBedrockPlayer.test(player)) {
-            player.sendMessage(messages.messageFor(MESSAGE_FIND_QUERYING));
+            player.sendMessage(messages.messageFor("find.querying"));
         } else {
-            audience.showDialog(waitScreen());
+            audience.showDialog(waitScreen(messages));
         }
         taskFactory.findTask(findState).whenComplete((res, ex) -> {
             audience.closeDialog();
             if (ex != null) {
                 ex.printStackTrace();
-                audience.sendMessage(Component.text("Internal error when querying shops!",
-                        NamedTextColor.RED));
+                audience.sendMessage(messages.messageFor("find.error.query"));
                 return;
             }
             if (res.isEmpty()) {
-                audience.sendMessage(Component.text("No shops found!", NamedTextColor.RED));
+                audience.sendMessage(messages.messageFor("find.empty-results"));
                 return;
             }
-            Component title = Component.text("Shop results for " + findState.item().itemCode());
+            Component title = messages.messageResolving("find.results-title",
+                    Placeholder.unparsed("item_code", findState.item().itemCode()));
             ChestGui chestGui = resultsGUI.createGui(title, res, findState.item().itemStack(), findState.queryPosition());
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> chestGui.show(player), 1);
         });
@@ -146,10 +148,10 @@ public class FindDialog {
             submit(view, audience, findState, taskFactory, resultsGUI, plugin, isBedrockPlayer, messages);
         }, ClickCallback.Options.builder().uses(1).build());
 
-        ActionButton submitButton = ActionButton.builder(Component.text("Search", NamedTextColor.GREEN))
+        ActionButton submitButton = ActionButton.builder(messages.messageFor("dialog.common.search"))
                 .action(submitAction)
                 .build();
-        ActionButton exitButton = ActionButton.builder(Component.text("Exit"))
+        ActionButton exitButton = ActionButton.builder(messages.messageFor("dialog.common.exit"))
                 .action(DialogUtil.CLOSE_DIALOG_ACTION)
                 .build();
         ActionButton spacerButton = ActionButton.builder(Component.text(""))
@@ -158,33 +160,35 @@ public class FindDialog {
                 .build();
 
         List<ActionButton> actions = List.of(
-                ActionButton.builder(Component.text("Buy Cheap"))
+                ActionButton.builder(messages.messageFor("find-main.buy-cheap"))
                         .action(buyCheapAction)
                         .build(),
-                ActionButton.builder(Component.text("Buy Nearby"))
+                ActionButton.builder(messages.messageFor("find-main.buy-nearby"))
                         .action(buyNearbyAction)
                         .build(),
-                ActionButton.builder(Component.text("Sell for Best Price"))
+                ActionButton.builder(messages.messageFor("find-main.sell-best-price"))
                         .action(sellBestPriceAction).build(),
                 spacerButton,
-                ActionButton.builder(Component.text("Filters"))
+                ActionButton.builder(messages.messageFor("find-main.filters"))
                         .action(DialogUtil.openDialogAction(() -> FilterDialog.createFiltersDialog(
                                 findState,
                                 () -> createMainPageDialog(findState, taskFactory, resultsGUI, plugin,
-                                        isBedrockPlayer, messages))))
+                                        isBedrockPlayer, messages),
+                                messages)))
                         .build(),
-                ActionButton.builder(Component.text("Sorting"))
+                ActionButton.builder(messages.messageFor("find-main.sorting"))
                         .action(DialogUtil.openDialogAction(() -> SortDialog.createSortDialog(
                                 findState,
                                 () -> createMainPageDialog(findState, taskFactory, resultsGUI, plugin,
-                                        isBedrockPlayer, messages))))
+                                        isBedrockPlayer, messages),
+                                messages)))
                         .build(),
                 submitButton
         );
 
         return Dialog.create(factory ->
                 factory.empty()
-                        .base(createMainPageBase(findState.item()))
+                        .base(createMainPageBase(findState.item(), messages))
                         .type(DialogType.multiAction(actions)
                                 .exitAction(exitButton)
                                 .columns(1)

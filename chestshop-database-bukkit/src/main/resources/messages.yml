@@ -1,0 +1,90 @@
+# Player-facing MiniMessage strings (https://docs.advntr.dev/minimessage/format.html)
+
+find:
+  querying: "<red>Querying..."
+  command:
+    need-item: "<red>You must hold an item in your hand or specify an item code!"
+    sign-target: "<red>You must be looking at a shop sign!"
+    sign-no-access: "<red>You do not have access to this shop sign!"
+    internal-error: "<red>Internal error occurred!"
+    visibility-toggled: "<aqua>Visibility toggled to <value>"
+    visibility-toggled-failed: "<red>Failed to update hologram!"
+    preview-toggled: "<aqua>Preview visibility toggled to <value>"
+  unknown-item-display: "<red>Unknown item: <item>"
+  unknown-item-code: "<red>Unknown item: <code>"
+  error:
+    query: "<red>Internal error when querying shops!"
+  empty-results: "<red>No shops found!"
+  results-title: "Shop results for <item_code>"
+  dialog:
+    title: "Find ChestShops"
+    title-with-item: "Find ChestShops for <item>"
+    query-title: "Chest Shop Query"
+    query-body: "Querying..."
+  filter:
+    title: "Select Shop Types"
+    empty-shops: "Empty Shops"
+    full-shops: "Full Shops"
+    shop-type:
+      buy: "Buy"
+      sell: "Sell"
+      both: "Buy & Sell"
+  sort:
+    title: "Shop Sorting"
+    description: "Configure how shops should be sorted"
+    direction-button: "Sorting Direction"
+    priority-button: "Sorting Priority"
+    directions-title: "Set Sorting Directions"
+    priorities-title: "Set Priorities"
+    priorities-description: "Set the priority of each characteristic as a tiebreaker. Higher priority = used to tiebreak first."
+    ascending: "<aqua>Ascending"
+    descending: "<blue>Descending"
+    off: "<red>Off"
+    attribute:
+      buy_price: "Buy Price"
+      sell_price: "Sell Price"
+      unit_buy_price: "Unit Buy Price"
+      unit_sell_price: "Unit Sell Price"
+      stock: "Stock"
+      remaining_capacity: "Remaining Capacity"
+      quantity: "Quantity"
+      distance: "Distance"
+
+dialog:
+  common:
+    back: "Back"
+    save: "Save"
+    exit: "Exit"
+    search: "<green>Search"
+    tooltip:
+      back: "Return to previous menu"
+      back-sort: "Return to the previous menu"
+      save-return: "Save selection and return to previous menu"
+      save-return-sort: "Save selection and return to the previous menu"
+  option:
+    "on": "<green>On"
+    "off": "<red>Off"
+
+find-main:
+  buy-cheap: "Buy Cheap"
+  buy-nearby: "Buy Nearby"
+  sell-best-price: "Sell for Best Price"
+  filters: "Filters"
+  sorting: "Sorting"
+
+gui:
+  results:
+    back: "<red>Back"
+    next-page: "Next Page"
+    prev-page: "Prev Page"
+
+command:
+  reload:
+    start: "<green>Reloading CSDB messages and settings"
+    success: "<green>Reload successful"
+    failure: "<red>Reload unsuccessful, check console for errors"
+
+resync:
+  queued: "<green>Resync queued"
+  progress: "<aqua>Resync Progress: <done>/<total> (<percent>%)"
+  complete: "Resync complete! (<total>)"

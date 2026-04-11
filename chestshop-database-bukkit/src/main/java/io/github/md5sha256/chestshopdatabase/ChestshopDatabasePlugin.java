@@ -98,7 +98,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         discoverer = new ItemDiscoverer(50, Duration.ofMinutes(5), 50, getServer(), getLogger());
         BukkitScheduler scheduler = getServer().getScheduler();
         executorState = new ExecutorState(databaseExecutor, scheduler.getMainThreadExecutor(this));
-        gui = new ShopResultsGUI(this, this.replacements, () -> this.settings);
+        gui = new ShopResultsGUI(this, this.replacements, () -> this.settings, () -> this.messageContainer);
         SqlSessionFactory sessionFactory = MariaDatabase.buildSessionFactory(this.databaseSettings);
         Supplier<DatabaseSession> sessionSupplier =
                 () -> new DatabaseSession(sessionFactory,
@@ -136,6 +136,11 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
         getLogger().info("Plugin disabled");
     }
 
+    @NotNull
+    public MessageContainer messages() {
+        return this.messageContainer;
+    }
+
     private void registerCommands(@NotNull SqlSessionFactory sessionFactory) {
         PluginManager pluginManager = getServer().getPluginManager();
         Supplier<DatabaseSession> sessionSupplier = () -> new DatabaseSession(sessionFactory,
@@ -160,7 +165,7 @@ public final class ChestshopDatabasePlugin extends JavaPlugin {
                 this.messageContainer);
         List<CommandBean> commands = List.of(
                 findCommand,
-                new ResyncCommand(this, resyncTaskFactory),
+                new ResyncCommand(this, resyncTaskFactory, this.messageContainer),
                 new ReloadCommand(this)
         );
         var csdb = Commands.literal("csdb");
