@@ -40,7 +40,7 @@ dependencies {
     implementation("org.mybatis:mybatis:3.5.19")
     implementation("org.mariadb.jdbc:mariadb-java-client:3.5.6")
     implementation("org.spongepowered:configurate-yaml:4.1.2")
-    implementation("com.github.stefvanschie.inventoryframework:IF:0.11.3")
+    implementation("com.github.stefvanschie.inventoryframework:IF:0.12.2")
 }
 
 

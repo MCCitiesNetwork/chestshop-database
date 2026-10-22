@@ -170,7 +170,7 @@ public record ShopResultsGUI(@NotNull Plugin plugin,
         Component title = Component.text("Item Preview: " + itemCode);
         ChestGui gui = new ChestGui(3, ComponentHolder.of(title), this.plugin);
 
-        StaticPane pane = new StaticPane(0, 0, 9, 3);
+        StaticPane pane = new StaticPane(9, 3);
         pane.addItem(new GuiItem(itemStack, event -> event.setCancelled(true), this.plugin), 4, 1);
 
         ItemStack backItem = ItemStack.of(Material.ARROW);
@@ -190,7 +190,7 @@ public record ShopResultsGUI(@NotNull Plugin plugin,
         fillItem.editMeta(meta -> meta.displayName(Component.empty()));
         pane.fillWith(fillItem, null, this.plugin);
 
-        gui.addPane(pane);
+        gui.addPane(Slot.fromXY(0, 0), pane);
         gui.setOnGlobalClick(event -> event.setCancelled(true));
         gui.setOnClose(event -> {
             if (event.getReason() == InventoryCloseEvent.Reason.OPEN_NEW) {
@@ -247,11 +247,11 @@ public record ShopResultsGUI(@NotNull Plugin plugin,
         fillItem.editMeta(meta -> meta.displayName(Component.empty()));
         footerPane.fillWith(fillItem, null, this.plugin);
 
-        PagingButtons pagingButtons = getPagingButtons(5, mainPane);
+        PagingButtons pagingButtons = getPagingButtons(mainPane);
 
-        gui.addPane(mainPane);
-        gui.addPane(footerPane);
-        gui.addPane(pagingButtons);
+        gui.addPane(Slot.fromXY(0, 0), mainPane);
+        gui.addPane(Slot.fromXY(0, 5), footerPane);
+        gui.addPane(Slot.fromXY(3, 5), pagingButtons);
         gui.setOnGlobalClick(event -> event.setCancelled(true));
         if (parent != null) {
             gui.setOnClose(event -> {
@@ -269,7 +269,7 @@ public record ShopResultsGUI(@NotNull Plugin plugin,
     }
 
     private @NotNull StaticPane getFooterPane(@Nullable Gui parent) {
-        StaticPane footerPane = new StaticPane(0, 5, 9, 1, Pane.Priority.LOWEST);
+        StaticPane footerPane = new StaticPane(9, 1, Pane.Priority.LOWEST);
         ItemStack backItem = ItemStack.of(Material.ARROW);
         backItem.editMeta(meta -> {
             Component displayName = messages.get().messageFor("gui.results.back")
@@ -286,9 +286,8 @@ public record ShopResultsGUI(@NotNull Plugin plugin,
         return footerPane;
     }
 
-    private @NotNull PagingButtons getPagingButtons(int y, PaginatedPane mainPane) {
-        PagingButtons pagingButtons = new PagingButtons(Slot.fromXY(3, y),
-                3,
+    private @NotNull PagingButtons getPagingButtons(PaginatedPane mainPane) {
+        PagingButtons pagingButtons = new PagingButtons(3,
                 Pane.Priority.HIGH,
                 mainPane,
                 this.plugin);
